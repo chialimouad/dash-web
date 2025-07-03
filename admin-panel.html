@@ -43,112 +43,242 @@
             background-size: 20px;
             padding-right: 40px; /* Space for the icon */
         }
+
+        /* Custom styles for the sidebar */
+        .sidebar {
+            width: 250px; /* Fixed width for the sidebar on larger screens */
+            background-color: #1f2937; /* Darker gray for sidebar background */
+            color: white;
+            padding: 1rem;
+            box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
+            border-top-right-radius: 12px;
+            border-bottom-right-radius: 12px;
+            /* Mobile specific styles: hidden by default, full height, fixed position */
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 100vh;
+            z-index: 50; /* Above main content, below modal overlays */
+            transform: translateX(-100%); /* Start off-screen */
+            transition: transform 0.3s ease-in-out; /* Smooth transition */
+        }
+
+        .sidebar.open {
+            transform: translateX(0); /* Slide in */
+        }
+
+        /* Overlay for mobile sidebar */
+        .sidebar-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 40; /* Below sidebar, above main content */
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease-in-out, visibility 0.3s ease-in-out;
+        }
+
+        .sidebar-overlay.show {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        /* Adjust main content for responsive layout */
+        @media (min-width: 768px) { /* md breakpoint */
+            .sidebar {
+                position: static; /* Reset to static for desktop layout */
+                transform: translateX(0); /* Always visible */
+                flex-shrink: 0; /* Prevent shrinking */
+            }
+            .sidebar-overlay {
+                display: none; /* Hide overlay on desktop */
+            }
+            .main-content-wrapper {
+                margin-left: 0; /* No margin needed as sidebar is static */
+            }
+        }
+
+        .sidebar-button {
+            display: flex;
+            align-items: center;
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border-radius: 0.5rem;
+            background-color: transparent;
+            color: white;
+            font-weight: 500;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        .sidebar-button:hover {
+            background-color: #374151; /* Slightly lighter gray on hover */
+        }
+
+        .sidebar-button.active {
+            background-color: #4f46e5; /* Indigo-600 for active state */
+            color: white;
+        }
     </style>
 </head>
-<body class="min-h-screen flex flex-col">
-    <!-- App Bar -->
-    <header class="bg-white shadow-sm p-4 flex justify-end items-center rounded-b-lg">
-        <button id="language-toggle" class="flex items-center space-x-2 bg-indigo-600 text-white px-4 py-2 rounded-lg shadow-md hover:bg-indigo-700 transition duration-300">
-            <i class="fas fa-language"></i>
-            <span id="language-text">English</span>
-        </button>
-    </header>
+<body class="min-h-screen flex">
+    <!-- Sidebar Overlay for mobile -->
+    <div id="sidebar-overlay" class="sidebar-overlay md:hidden"></div>
 
-    <main class="flex-1 flex flex-col p-4">
-        <!-- Filter Section -->
-        <section class="bg-gray-50 p-6 rounded-xl shadow-md mb-6">
-            <div class="flex justify-between items-center mb-4">
-                <h2 id="filter-orders-title" class="text-2xl font-bold text-gray-800">Filter Orders</h2>
-                <i class="fas fa-filter text-3xl text-gray-700"></i>
-            </div>
-            <div class="flex flex-wrap gap-3">
-                <button id="filter-today" class="filter-button bg-gray-200 text-gray-800 px-5 py-3 rounded-lg shadow-sm hover:bg-gray-300 transition duration-300 flex items-center space-x-2">
-                    <i class="fas fa-calendar-day"></i>
-                    <span class="filter-label">Today</span>
-                </button>
-                <button id="filter-month" class="filter-button bg-indigo-600 text-white px-5 py-3 rounded-lg shadow-md hover:bg-indigo-700 transition duration-300 flex items-center space-x-2">
-                    <i class="fas fa-calendar-alt"></i>
-                    <span class="filter-label">This Month</span>
-                </button>
-                <button id="filter-custom" class="filter-button bg-gray-200 text-gray-800 px-5 py-3 rounded-lg shadow-sm hover:bg-gray-300 transition duration-300 flex items-center space-x-2">
-                    <i class="fas fa-calendar-days"></i>
-                    <span class="filter-label">Custom Range</span>
-                </button>
-                <button id="filter-all" class="filter-button bg-gray-200 text-gray-800 px-5 py-3 rounded-lg shadow-sm hover:bg-gray-300 transition duration-300 flex items-center space-x-2">
-                    <i class="fas fa-globe"></i>
-                    <span class="filter-label">All Orders</span>
-                </button>
-            </div>
-            <div id="custom-date-range" class="mt-4 hidden flex-col sm:flex-row gap-4 items-center">
-                <div class="flex items-center space-x-2 w-full sm:w-auto">
-                    <label for="start-date" class="text-gray-700 font-medium">From:</label>
-                    <input type="date" id="start-date" class="p-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 w-full sm:w-auto">
-                </div>
-                <div class="flex items-center space-x-2 w-full sm:w-auto">
-                    <label for="end-date" class="text-gray-700 font-medium">To:</label>
-                    <input type="date" id="end-date" class="p-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 w-full sm:w-auto">
-                </div>
-                <p id="selected-date-range" class="text-sm text-gray-700 mt-2 sm:mt-0"></p>
-            </div>
-        </section>
+    <!-- Sidebar -->
+    <aside id="sidebar" class="sidebar">
+        <div class="p-4 mb-6 flex justify-between items-center">
+            <h2 class="text-2xl font-bold text-white">Admin Dashboard</h2>
+            <!-- Close button for mobile sidebar -->
+            <button id="close-sidebar-btn" class="md:hidden text-white text-2xl">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <nav class="flex-1 space-y-2">
+            <button id="dashboard-nav-btn" class="sidebar-button active">
+                <i class="fas fa-tachometer-alt mr-3"></i>
+                <span>Dashboard</span>
+            </button>
+            <button id="orders-button" class="sidebar-button">
+                <i class="fas fa-clipboard-list mr-3"></i>
+                <span>Orders</span>
+            </button>
+            <button id="add-product-nav-btn" class="sidebar-button">
+                <i class="fas fa-box-open mr-3"></i>
+                <span>Add Product</span>
+            </button>
+            <button id="all-products-nav-btn" class="sidebar-button">
+                <i class="fas fa-boxes mr-3"></i>
+                <span>All Products</span>
+            </button>
+            <!-- NEW BUTTON: Stock -->
+            <button id="stock-nav-btn" class="sidebar-button">
+                <i class="fas fa-warehouse mr-3"></i> <!-- Icon for stock/warehouse -->
+                <span>Stock</span>
+            </button>
+            <!-- Other sidebar items can go here -->
+        </nav>
+        <div class="mt-auto p-4 border-t border-gray-700">
+            <button id="language-toggle" class="sidebar-button">
+                <i class="fas fa-language mr-3"></i>
+                <span id="language-text">English</span>
+            </button>
+        </div>
+    </aside>
 
-        <hr class="border-gray-300 mb-6">
-
-        <!-- Main Content Grid -->
-        <section id="dashboard-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 flex-1">
-            <!-- Order Summary Card -->
-            <div id="order-summary-card" class="dashboard-card bg-white p-6 rounded-xl shadow-lg flex flex-col">
-                <div class="flex items-center mb-4">
-                    <i class="fas fa-list-alt text-3xl text-gray-800"></i>
-                    <h3 class="text-2xl font-bold text-gray-800 ml-3">Order Summary</h3>
-                </div>
-                <div id="order-summary-content" class="flex-1 flex items-center justify-center">
-                    <!-- Content will be loaded here -->
-                </div>
+    <!-- Main Content Area -->
+    <div class="flex-1 flex flex-col md:ml-[250px] transition-all duration-300 ease-in-out"> <!-- Added margin for desktop sidebar -->
+        <!-- App Bar -->
+        <header class="bg-white shadow-sm p-4 flex justify-between md:justify-end items-center rounded-b-lg">
+            <!-- Hamburger menu for mobile -->
+            <button id="open-sidebar-btn" class="md:hidden text-gray-800 text-2xl">
+                <i class="fas fa-bars"></i>
+            </button>
+            <div class="flex space-x-2">
+                <!-- Any other header buttons can go here if they are not part of the sidebar -->
             </div>
+        </header>
 
-            <!-- Order Distribution Card (Pie Chart) -->
-            <div id="order-distribution-card" class="dashboard-card bg-white p-6 rounded-xl shadow-lg flex flex-col">
-                <div class="flex items-center mb-4">
-                    <i class="fas fa-chart-pie text-3xl text-gray-800"></i>
-                    <h3 class="text-2xl font-bold text-gray-800 ml-3">Order Distribution</h3>
+        <main class="flex-1 flex flex-col p-4">
+            <!-- Filter Section -->
+            <section class="bg-gray-50 p-6 rounded-xl shadow-md mb-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 id="filter-orders-title" class="text-2xl font-bold text-gray-800">Filter Orders</h2>
+                    <i class="fas fa-filter text-3xl text-gray-700"></i>
                 </div>
-                <div id="order-distribution-content" class="flex-1 flex items-center justify-center">
-                    <canvas id="orderPieChart"></canvas>
+                <div class="flex flex-wrap gap-3">
+                    <button id="filter-today" class="filter-button bg-gray-200 text-gray-800 px-5 py-3 rounded-lg shadow-sm hover:bg-gray-300 transition duration-300 flex items-center space-x-2">
+                        <i class="fas fa-calendar-day"></i>
+                        <span class="filter-label">Today</span>
+                    </button>
+                    <button id="filter-month" class="filter-button bg-indigo-600 text-white px-5 py-3 rounded-lg shadow-md hover:bg-indigo-700 transition duration-300 flex items-center space-x-2">
+                        <i class="fas fa-calendar-alt"></i>
+                        <span class="filter-label">This Month</span>
+                    </button>
+                    <button id="filter-custom" class="filter-button bg-gray-200 text-gray-800 px-5 py-3 rounded-lg shadow-sm hover:bg-gray-300 transition duration-300 flex items-center space-x-2">
+                        <i class="fas fa-calendar-days"></i>
+                        <span class="filter-label">Custom Range</span>
+                    </button>
+                    <button id="filter-all" class="filter-button bg-gray-200 text-gray-800 px-5 py-3 rounded-lg shadow-sm hover:bg-gray-300 transition duration-300 flex items-center space-x-2">
+                        <i class="fas fa-globe"></i>
+                        <span class="filter-label">All Orders</span>
+                    </button>
                 </div>
-            </div>
+                <div id="custom-date-range" class="mt-4 hidden flex-col sm:flex-row gap-4 items-center">
+                    <div class="flex items-center space-x-2 w-full sm:w-auto">
+                        <label for="start-date" class="text-gray-700 font-medium">From:</label>
+                        <input type="date" id="start-date" class="p-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 w-full sm:w-auto">
+                    </div>
+                    <div class="flex items-center space-x-2 w-full sm:w-auto">
+                        <label for="end-date" class="text-gray-700 font-medium">To:</label>
+                        <input type="date" id="end-date" class="p-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 w-full sm:w-auto">
+                    </div>
+                    <p id="selected-date-range" class="text-sm text-gray-700 mt-2 sm:mt-0"></p>
+                </div>
+            </section>
 
-            <!-- Admins Card -->
-            <div id="admins-card" class="dashboard-card bg-white p-6 rounded-xl shadow-lg flex flex-col">
-                <div class="flex items-center mb-4">
-                    <i class="fas fa-user-shield text-3xl text-gray-800"></i>
-                    <h3 class="text-2xl font-bold text-gray-800 ml-3">Admins</h3>
-                </div>
-                <div class="mb-4">
-                    <input type="text" id="admin-search" placeholder="Search..." class="w-full p-3 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 bg-gray-50 text-gray-800">
-                </div>
-                <hr class="border-gray-300 mb-4">
-                <div id="admins-content" class="flex-1 overflow-y-auto">
-                    <!-- Content will be loaded here -->
-                </div>
-            </div>
+            <hr class="border-gray-300 mb-6">
 
-            <!-- Stock Info Card -->
-            <div id="stock-info-card" class="dashboard-card bg-white p-6 rounded-xl shadow-lg flex flex-col">
-                <div class="flex items-center mb-4">
-                    <i class="fas fa-store text-3xl text-gray-800"></i>
-                    <h3 class="text-2xl font-bold text-gray-800 ml-3">Stock Info</h3>
+            <!-- Main Content Grid -->
+            <section id="dashboard-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 flex-1">
+                <!-- Order Summary Card -->
+                <div id="order-summary-card" class="dashboard-card bg-white p-6 rounded-xl shadow-lg flex flex-col">
+                    <div class="flex items-center mb-4">
+                        <i class="fas fa-list-alt text-3xl text-gray-800"></i>
+                        <h3 class="text-2xl font-bold text-gray-800 ml-3">Order Summary</h3>
+                    </div>
+                    <div id="order-summary-content" class="flex-1 flex items-center justify-center">
+                        <!-- Content will be loaded here -->
+                    </div>
                 </div>
-                <div class="mb-4">
-                    <input type="text" id="stock-search" placeholder="Search..." class="w-full p-3 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 bg-gray-50 text-gray-800">
+
+                <!-- Order Distribution Card (Pie Chart) -->
+                <div id="order-distribution-card" class="dashboard-card bg-white p-6 rounded-xl shadow-lg flex flex-col">
+                    <div class="flex items-center mb-4">
+                        <i class="fas fa-chart-pie text-3xl text-gray-800"></i>
+                        <h3 class="text-2xl font-bold text-gray-800 ml-3">Order Distribution</h3>
+                    </div>
+                    <div id="order-distribution-content" class="flex-1 flex items-center justify-center">
+                        <canvas id="orderPieChart"></canvas>
+                    </div>
                 </div>
-                <hr class="border-gray-300 mb-4">
-                <div id="stock-info-content" class="flex-1 flex items-center justify-center text-gray-800 text-lg">
-                    Stock Information Placeholder
+
+                <!-- Admins Card -->
+                <div id="admins-card" class="dashboard-card bg-white p-6 rounded-xl shadow-lg flex flex-col">
+                    <div class="flex items-center mb-4">
+                        <i class="fas fa-user-shield text-3xl text-gray-800"></i>
+                        <h3 class="text-2xl font-bold text-gray-800 ml-3">Admins</h3>
+                    </div>
+                    <div class="mb-4">
+                        <input type="text" id="admin-search" placeholder="Search..." class="w-full p-3 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 bg-gray-50 text-gray-800">
+                    </div>
+                    <hr class="border-gray-300 mb-4">
+                    <div id="admins-content" class="flex-1 overflow-y-auto">
+                        <!-- Content will be loaded here -->
+                    </div>
                 </div>
-            </div>
-        </section>
-    </main>
+
+                <!-- Stock Info Card -->
+                <div id="stock-info-card" class="dashboard-card bg-white p-6 rounded-xl shadow-lg flex flex-col">
+                    <div class="flex items-center mb-4">
+                        <i class="fas fa-store text-3xl text-gray-800"></i>
+                        <h3 class="text-2xl font-bold text-gray-800 ml-3">Stock Info</h3>
+                    </div>
+                    <div class="mb-4">
+                        <input type="text" id="stock-search" placeholder="Search..." class="w-full p-3 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 bg-gray-50 text-gray-800">
+                    </div>
+                    <hr class="border-gray-300 mb-4">
+                    <div id="stock-info-content" class="flex-1 flex items-center justify-center text-gray-800 text-lg">
+                        Stock Information Placeholder
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
 
     <script>
         // Global state management
@@ -170,6 +300,8 @@
             adminFilter: '',
             stockFilter: '',
             orderPieChartInstance: null, // To store Chart.js instance
+            activeSidebarButton: 'dashboard-nav-btn', // Keep track of the active button
+            isSidebarOpen: false // New state for sidebar visibility
         };
 
         // Translations map
@@ -181,6 +313,11 @@
                 'thisMonth': 'This Month',
                 'customRange': 'Custom Range',
                 'allOrders': 'All Orders',
+                'ordersButton': 'Orders',
+                'dashboardButton': 'Dashboard',
+                'addProductButton': 'Add Product',
+                'allProductsButton': 'All Products',
+                'stockButton': 'Stock', // NEW TRANSLATION
                 'selected': 'Selected',
                 'orderSummary': 'Order Summary',
                 'totalOrders': 'Total Orders',
@@ -210,6 +347,11 @@
                 'thisMonth': 'هذا الشهر',
                 'customRange': 'نطاق مخصص',
                 'allOrders': 'جميع الطلبات',
+                'ordersButton': 'الطلبات',
+                'dashboardButton': 'لوحة القيادة',
+                'addProductButton': 'إضافة منتج',
+                'allProductsButton': 'جميع المنتجات',
+                'stockButton': 'المخزون', // NEW TRANSLATION
                 'selected': 'المحدد',
                 'orderSummary': 'ملخص الطلبات',
                 'totalOrders': 'إجمالي الطلبات',
@@ -237,6 +379,32 @@
         // Helper to get translated string
         function getTranslatedString(key) {
             return translations[appState.isEnglish ? 'en' : 'ar'][key] || key;
+        }
+
+        // Function to update sidebar active states
+        function updateSidebarActiveState(activeButtonId) {
+            document.querySelectorAll('.sidebar-button').forEach(button => {
+                button.classList.remove('active');
+            });
+            const activeButton = document.getElementById(activeButtonId);
+            if (activeButton) {
+                activeButton.classList.add('active');
+                appState.activeSidebarButton = activeButtonId; // Update state
+            }
+        }
+
+        // Function to toggle sidebar visibility
+        function toggleSidebar() {
+            appState.isSidebarOpen = !appState.isSidebarOpen;
+            const sidebar = document.getElementById('sidebar');
+            const sidebarOverlay = document.getElementById('sidebar-overlay');
+            if (appState.isSidebarOpen) {
+                sidebar.classList.add('open');
+                sidebarOverlay.classList.add('show');
+            } else {
+                sidebar.classList.remove('open');
+                sidebarOverlay.classList.remove('show');
+            }
         }
 
         // Function to toggle language
@@ -382,11 +550,20 @@
             document.getElementById('language-text').textContent = getTranslatedString('language');
             document.getElementById('filter-orders-title').textContent = getTranslatedString('filterOrders');
 
+            // Update sidebar button labels
+            document.getElementById('orders-button').querySelector('span').textContent = getTranslatedString('ordersButton');
+            document.getElementById('dashboard-nav-btn').querySelector('span').textContent = getTranslatedString('dashboardButton');
+            document.getElementById('add-product-nav-btn').querySelector('span').textContent = getTranslatedString('addProductButton');
+            document.getElementById('all-products-nav-btn').querySelector('span').textContent = getTranslatedString('allProductsButton');
+            document.getElementById('stock-nav-btn').querySelector('span').textContent = getTranslatedString('stockButton'); // TRANSLATE NEW BUTTON
+
+
             // Update filter button labels
             document.querySelector('#filter-today .filter-label').textContent = getTranslatedString('today');
             document.querySelector('#filter-month .filter-label').textContent = getTranslatedString('thisMonth');
             document.querySelector('#filter-custom .filter-label').textContent = getTranslatedString('customRange');
             document.querySelector('#filter-all .filter-label').textContent = getTranslatedString('allOrders');
+
 
             // Update custom date range labels
             document.querySelector('#custom-date-range label[for="start-date"]').textContent = getTranslatedString('From') + ':';
@@ -403,6 +580,9 @@
             document.getElementById('stock-search').placeholder = getTranslatedString('searchHint');
 
             document.getElementById('stock-info-content').textContent = getTranslatedString('stockInformation');
+
+            // Apply active state to the currently selected sidebar button
+            updateSidebarActiveState(appState.activeSidebarButton);
 
             // Re-render all dynamic content
             updateFilterButtons();
@@ -663,7 +843,7 @@
             `).join('');
 
             if (filteredAdmins.length === 0 && appState.adminFilter !== '') {
-                 contentDiv.innerHTML = `
+                contentDiv.innerHTML = `
                     <div class="flex flex-col items-center justify-center h-full text-gray-600">
                         <i class="fas fa-info-circle text-4xl mb-3"></i>
                         <p>No admins found matching your search.</p>
@@ -692,8 +872,48 @@
             fetchAdmins();
             fetchOrders();
 
+            // Sidebar toggle buttons
+            document.getElementById('open-sidebar-btn').addEventListener('click', toggleSidebar);
+            document.getElementById('close-sidebar-btn').addEventListener('click', toggleSidebar);
+            document.getElementById('sidebar-overlay').addEventListener('click', toggleSidebar); // Close sidebar when clicking overlay
+
             // Language Toggle
             document.getElementById('language-toggle').addEventListener('click', toggleLanguage);
+
+            // Orders Button
+            document.getElementById('orders-button').addEventListener('click', () => {
+                window.location.href = 'order-management-app.html';
+                updateSidebarActiveState('orders-button'); // Update active state
+                if (appState.isSidebarOpen) toggleSidebar(); // Close sidebar on navigation
+            });
+
+            // Dashboard Navigation Button
+            document.getElementById('dashboard-nav-btn').addEventListener('click', () => {
+                updateSidebarActiveState('dashboard-nav-btn');
+                if (appState.isSidebarOpen) toggleSidebar(); // Close sidebar on navigation
+                // If this is a single-page app, you'd show/hide dashboard sections.
+            });
+
+            // Add Product Navigation Button
+            document.getElementById('add-product-nav-btn').addEventListener('click', () => {
+                window.location.href = 'addproduct.html'; // Navigate to addproduct.html
+                updateSidebarActiveState('add-product-nav-btn'); // Update active state
+                if (appState.isSidebarOpen) toggleSidebar(); // Close sidebar on navigation
+            });
+
+            // All Products Navigation Button
+            document.getElementById('all-products-nav-btn').addEventListener('click', () => {
+                window.location.href = 'products.html'; // Navigate to products.html
+                updateSidebarActiveState('all-products-nav-btn'); // Update active state
+                if (appState.isSidebarOpen) toggleSidebar(); // Close sidebar on navigation
+            });
+
+            // NEW: Stock Navigation Button
+            document.getElementById('stock-nav-btn').addEventListener('click', () => {
+                window.location.href = 'stock.html'; // Navigate to stock.html
+                updateSidebarActiveState('stock-nav-btn'); // Update active state
+                if (appState.isSidebarOpen) toggleSidebar(); // Close sidebar on navigation
+            });
 
             // Filter Buttons
             document.getElementById('filter-today').addEventListener('click', () => {

@@ -1,0 +1,736 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stock Management</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts - Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Font Awesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6; /* Light gray background */
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+        /* Custom scrollbar for better aesthetics */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+
+        /* Modal overlay styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+        }
+        .modal-overlay.show {
+            opacity: 1;
+            visibility: visible;
+        }
+        .modal-content {
+            background-color: white;
+            padding: 2rem;
+            border-radius: 0.75rem; /* rounded-xl */
+            box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1); /* shadow-lg */
+            max-width: 90%;
+            max-height: 90%;
+            overflow-y: auto;
+            transform: translateY(-20px);
+            transition: transform 0.3s ease;
+        }
+        .modal-overlay.show .modal-content {
+            transform: translateY(0);
+        }
+
+        /* Snackbar styles */
+        #snackbar {
+            visibility: hidden; /* Hidden by default. */
+            min-width: 250px; /* Set a default minimum width */
+            background-color: #333; /* Black background color */
+            color: #fff; /* White text color */
+            text-align: center; /* Centered text */
+            border-radius: 8px; /* Rounded borders */
+            padding: 16px; /* Padding */
+            position: fixed; /* Sit on top of the screen */
+            z-index: 1001; /* Add a z-index if needed */
+            left: 50%; /* Center the snackbar */
+            bottom: 30px; /* 30px from the bottom */
+            transform: translateX(-50%);
+            opacity: 0;
+            transition: opacity 0.5s, visibility 0.5s;
+        }
+
+        #snackbar.show {
+            visibility: visible; /* Show the snackbar */
+            opacity: 1; /* Fade in */
+        }
+
+        /* Custom styles for text fields to match Flutter's InputDecoration */
+        .custom-text-field {
+            background-color: #f5f5f5; /* grey.shade100 */
+            border: 1px solid #e0e0e0; /* grey.shade300 */
+            border-radius: 8px;
+            padding: 10px 12px;
+            color: #212121; /* black87 */
+            width: 100%;
+            box-sizing: border-box; /* Include padding and border in the element's total width and height */
+        }
+        .custom-text-field:focus {
+            outline: none;
+            border-color: #000; /* black */
+            border-width: 2px;
+        }
+        .custom-text-field::placeholder {
+            color: #757575; /* black54 */
+        }
+    </style>
+</head>
+<body class="flex flex-col">
+    <!-- App Bar -->
+    <header class="bg-white shadow-sm p-4 flex justify-between items-center sticky top-0 z-10">
+        <h1 class="text-2xl font-bold text-gray-900">Stock Management</h1>
+        <button id="go-to-dashboard-btn" class="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition duration-300">
+            <i class="fas fa-arrow-left mr-2"></i> Back to Dashboard
+        </button>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="flex-1 p-4 overflow-y-auto">
+        <div id="loading-indicator" class="flex flex-col items-center justify-center h-full min-h-[200px] hidden">
+            <div class="animate-spin rounded-full h-12 w-12 border-4 border-gray-900 border-t-transparent"></div>
+            <p class="mt-4 text-gray-700">Loading products...</p>
+        </div>
+
+        <div id="permission-denied" class="flex flex-col items-center justify-center h-full min-h-[300px] hidden">
+            <i class="fas fa-lock text-6xl text-gray-500 mb-4"></i>
+            <h2 class="text-xl font-bold text-gray-800 mb-2">Access Denied</h2>
+            <p class="text-gray-600 text-center">You need admin or stock agent privileges to view this page.</p>
+        </div>
+
+        <div id="no-products-found" class="flex flex-col items-center justify-center h-full min-h-[300px] hidden">
+            <i class="fas fa-box-open text-6xl text-gray-500 mb-4"></i>
+            <h2 class="text-xl font-bold text-gray-800 mb-2">No products found.</h2>
+            <p class="text-gray-600 text-center">Add products to manage their stock.</p>
+        </div>
+
+        <div id="products-list" class="space-y-4">
+            <!-- Products will be loaded here -->
+        </div>
+    </main>
+
+    <!-- Modals -->
+    <div id="edit-overall-quantity-modal" class="modal-overlay">
+        <div class="modal-content">
+            <h3 class="text-xl font-bold text-gray-900 mb-4">Edit Overall Stock</h3>
+            <input type="number" id="edit-overall-quantity-input" placeholder="New Overall Quantity" class="custom-text-field mb-4">
+            <div class="flex justify-end space-x-4">
+                <button id="cancel-overall-quantity-edit" class="px-6 py-3 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition duration-300">Cancel</button>
+                <button id="save-overall-quantity-edit" class="px-6 py-3 bg-black text-white rounded-lg hover:bg-gray-800 transition duration-300">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="edit-variant-group-modal" class="modal-overlay">
+        <div class="modal-content">
+            <h3 class="text-xl font-bold text-gray-900 mb-4">Edit Variant Group</h3>
+            <input type="text" id="edit-variant-colors-input" placeholder="Colors (comma-separated)" class="custom-text-field mb-4">
+            <input type="text" id="edit-variant-sizes-input" placeholder="Sizes (comma-separated)" class="custom-text-field mb-4">
+            <div class="flex justify-end space-x-4">
+                <button id="cancel-variant-group-edit" class="px-6 py-3 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition duration-300">Cancel</button>
+                <button id="save-variant-group-edit" class="px-6 py-3 bg-black text-white rounded-lg hover:bg-gray-800 transition duration-300">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="confirm-dialog-modal" class="modal-overlay">
+        <div class="modal-content w-full max-w-sm">
+            <h3 id="confirm-dialog-title" class="text-xl font-bold text-gray-900 mb-4">Confirm Action</h3>
+            <p id="confirm-dialog-message" class="text-gray-700 mb-6">Are you sure you want to proceed?</p>
+            <div class="flex justify-end space-x-4">
+                <button id="confirm-dialog-cancel" class="px-6 py-3 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition duration-300">Cancel</button>
+                <button id="confirm-dialog-confirm" class="px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition duration-300">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Snackbar -->
+    <div id="snackbar"></div>
+
+    <script>
+        // Global State Variables (mimicking Flutter's StatefulWidget state)
+        const appState = {
+            products: [],
+            isLoading: true,
+            userRole: null, // Will be loaded from localStorage
+            // For modals:
+            currentEditProduct: null, // Stores product being edited for overall quantity
+            currentEditVariantGroup: null, // Stores variant group being edited
+            currentEditProductIndex: -1, // Stores index of product being edited
+            currentEditVariantGroupIndex: -1, // Stores index of variant group being edited
+        };
+
+        // DOM Elements
+        const loadingIndicator = document.getElementById('loading-indicator');
+        const permissionDeniedMessage = document.getElementById('permission-denied');
+        const noProductsFoundMessage = document.getElementById('no-products-found');
+        const productsListContainer = document.getElementById('products-list');
+        const snackbar = document.getElementById('snackbar');
+
+        // Modals and their elements
+        const editOverallQuantityModal = document.getElementById('edit-overall-quantity-modal');
+        const editOverallQuantityInput = document.getElementById('edit-overall-quantity-input');
+        const saveOverallQuantityEditBtn = document.getElementById('save-overall-quantity-edit');
+        const cancelOverallQuantityEditBtn = document.getElementById('cancel-overall-quantity-edit');
+
+        const editVariantGroupModal = document.getElementById('edit-variant-group-modal');
+        const editVariantColorsInput = document.getElementById('edit-variant-colors-input');
+        const editVariantSizesInput = document.getElementById('edit-variant-sizes-input');
+        const saveVariantGroupEditBtn = document.getElementById('save-variant-group-edit');
+        const cancelVariantGroupEditBtn = document.getElementById('cancel-variant-group-edit');
+
+        const confirmDialogModal = document.getElementById('confirm-dialog-modal');
+        const confirmDialogTitle = document.getElementById('confirm-dialog-title');
+        const confirmDialogMessage = document.getElementById('confirm-dialog-message');
+        const confirmDialogCancelBtn = document.getElementById('confirm-dialog-cancel');
+        const confirmDialogConfirmBtn = document.getElementById('confirm-dialog-confirm');
+
+        // Base URL for the backend API
+        const BASE_URL = 'https://sheeka.onrender.com';
+
+        // --- Utility Functions ---
+
+        /**
+         * Loads the user role from localStorage.
+         * This determines access and modification permissions on the page.
+         */
+        function loadUserRole() {
+            appState.userRole = localStorage.getItem('role') ?? "guest"; // Default to "guest"
+            renderApp(); // Re-render based on role
+        }
+
+        /**
+         * Helper function to build absolute image URLs.
+         */
+        function buildAbsoluteImageUrl(relativePath) {
+            if (!relativePath || relativePath.trim() === '') {
+                return 'https://placehold.co/150x150/EEEEEE/333333?text=No+Image';
+            }
+            if (relativePath.startsWith('http://') || relativePath.startsWith('https://')) {
+                return relativePath;
+            }
+            return `${BASE_URL}${relativePath}`;
+        }
+
+        /**
+         * Displays a snackbar message.
+         */
+        let snackbarTimeout;
+        function showMessage(message, isError = false) {
+            snackbar.textContent = message;
+            snackbar.classList.remove('error', 'success');
+            snackbar.classList.add(isError ? 'error' : 'success');
+            snackbar.classList.add('show');
+
+            clearTimeout(snackbarTimeout);
+            snackbarTimeout = setTimeout(() => {
+                snackbar.classList.remove('show');
+            }, 3000);
+        }
+
+        /**
+         * Shows a modal overlay.
+         */
+        function showModal(modalElement) {
+            modalElement.classList.add('show');
+        }
+
+        /**
+         * Hides a modal overlay.
+         */
+        function hideModal(modalElement) {
+            modalElement.classList.remove('show');
+        }
+
+        /**
+         * Displays a confirmation dialog and returns a Promise that resolves to true if confirmed, false otherwise.
+         */
+        function showConfirmationDialog(title, content) {
+            return new Promise(resolve => {
+                confirmDialogTitle.textContent = title;
+                confirmDialogMessage.textContent = content;
+                showModal(confirmDialogModal);
+
+                const handleConfirm = () => {
+                    hideModal(confirmDialogModal);
+                    confirmDialogConfirmBtn.removeEventListener('click', handleConfirm);
+                    confirmDialogCancelBtn.removeEventListener('click', handleCancel);
+                    resolve(true);
+                };
+
+                const handleCancel = () => {
+                    hideModal(confirmDialogModal);
+                    confirmDialogConfirmBtn.removeEventListener('click', handleConfirm);
+                    confirmDialogCancelBtn.removeEventListener('click', handleCancel);
+                    resolve(false);
+                };
+
+                confirmDialogConfirmBtn.addEventListener('click', handleConfirm);
+                confirmDialogCancelBtn.addEventListener('click', handleCancel);
+            });
+        }
+
+        // --- API Fetching Functions ---
+
+        /**
+         * Fetches all products from the backend API.
+         * Updates the UI with fetched data and manages loading state.
+         */
+        async function fetchProducts() {
+            appState.isLoading = true;
+            renderApp(); // Show loading indicator
+
+            try {
+                const response = await fetch(`${BASE_URL}/products`);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const fetchedProducts = await response.json();
+                console.log('Fetched Products JSON:', JSON.stringify(fetchedProducts)); // DEBUG
+
+                appState.products = fetchedProducts;
+            } catch (e) {
+                console.error('Error fetching products:', e);
+                showMessage(`Error fetching products: ${e.message}`, true);
+                appState.products = []; // Clear products on error
+            } finally {
+                appState.isLoading = false;
+                renderApp(); // Hide loading indicator and render products
+            }
+        }
+
+        /**
+         * Updates the stock quantity for a specific product (without variants)
+         * or updates the variant lists for a product with variants via API.
+         */
+        async function updateProductData(productId, productIndex, { newQuantity, updatedVariantGroup, variantGroupIndex } = {}) {
+            // Check if the user has permission to edit stock
+            if (appState.userRole !== "admin" && appState.userRole !== "stockagent") {
+                showMessage('You do not have permission to update stock.', true);
+                return;
+            }
+
+            try {
+                // Create a mutable copy of the product to send
+                let productToUpdate = { ...appState.products[productIndex] };
+                let itemName = productToUpdate.name ?? 'product';
+
+                if (newQuantity !== undefined && newQuantity !== null) {
+                    // Update the main product's quantity
+                    productToUpdate.quantity = newQuantity;
+                } else if (updatedVariantGroup !== undefined && updatedVariantGroup !== null && variantGroupIndex !== undefined && variantGroupIndex !== null) {
+                    // Update a specific variant group (for products with variants)
+                    if (productToUpdate.variants && productToUpdate.variants.length > variantGroupIndex) {
+                        productToUpdate.variants[variantGroupIndex] = updatedVariantGroup;
+                        itemName = `${productToUpdate.name} Variant Group`; // More specific message
+                    } else {
+                        showMessage('Variant group not found for update.', true);
+                        return;
+                    }
+                } else {
+                    showMessage('No valid update data provided.', true);
+                    return;
+                }
+
+                const response = await fetch(`${BASE_URL}/products/${productId}`, {
+                    method: 'PUT',
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(productToUpdate), // Send the entire updated product object
+                });
+
+                if (response.ok) {
+                    // Update the local product list with the new data from the response
+                    const updatedProduct = (await response.json()).product;
+                    appState.products[productIndex] = updatedProduct;
+                    renderProductsList(); // Re-render specific list item or entire list
+                    showMessage(`"${itemName}" updated successfully!`, false);
+                } else {
+                    const errorBody = await response.json();
+                    showMessage(`Failed to update "${itemName}": ${errorBody.message ?? response.status}`, true);
+                    // Re-fetch products to ensure UI reflects actual backend state if update failed
+                    fetchProducts();
+                }
+            } catch (e) {
+                showMessage(`Error updating "${itemName}": ${e.message}`, true);
+                // Re-fetch products to ensure UI reflects actual backend state if an error occurred
+                fetchProducts();
+            }
+        }
+
+        /**
+         * Deletes a product via API.
+         */
+        async function deleteProduct(productId, productName, index) {
+            // Check if the user has permission to delete products
+            if (appState.userRole !== "admin") { // Only admin can delete products
+                showMessage('You do not have permission to delete products.', true);
+                return;
+            }
+
+            const confirm = await showConfirmationDialog(
+                'Delete Product',
+                `Are you sure you want to delete "${productName}"? This action cannot be undone.`,
+            );
+
+            if (!confirm) {
+                return; // User cancelled
+            }
+
+            appState.isLoading = true;
+            renderApp(); // Show loading indicator during deletion
+
+            try {
+                const response = await fetch(`${BASE_URL}/products/${productId}`, {
+                    method: 'DELETE',
+                });
+
+                if (response.ok) {
+                    appState.products.splice(index, 1); // Remove the product from the local list
+                    showMessage(`Product "${productName}" deleted successfully!`, false);
+                } else {
+                    const errorBody = await response.json();
+                    showMessage(`Failed to delete product "${productName}": ${errorBody.message ?? response.status}`, true);
+                }
+            } catch (e) {
+                showMessage(`Error deleting product "${productName}": ${e.message}`, true);
+            } finally {
+                appState.isLoading = false;
+                renderApp(); // Hide loading indicator and re-render
+            }
+        }
+
+        /**
+         * Deletes a specific variant group from a product.
+         */
+        async function deleteProductVariantGroup(productId, productIndex, variantGroupIndex, colorsText, sizesText) {
+            // Check if the user has permission to delete variants
+            if (appState.userRole !== "admin" && appState.userRole !== "stockagent") {
+                showMessage('You do not have permission to delete variants.', true);
+                return;
+            }
+
+            const variantGroupName = `Colors: ${colorsText}, Sizes: ${sizesText}`;
+            const productName = appState.products[productIndex].name ?? 'product';
+
+            const confirm = await showConfirmationDialog(
+                'Delete Variant Group',
+                `Are you sure you want to delete variant group "${variantGroupName}" for "${productName}"? This action cannot be undone.`,
+            );
+
+            if (!confirm) {
+                return; // User cancelled
+            }
+
+            appState.isLoading = true;
+            renderApp(); // Show loading indicator during deletion
+
+            try {
+                // Create a mutable copy of the product to send
+                let productToUpdate = { ...appState.products[productIndex] };
+
+                // Remove the specific variant group from the variants list
+                if (productToUpdate.variants && productToUpdate.variants.length > variantGroupIndex) {
+                    productToUpdate.variants.splice(variantGroupIndex, 1);
+                } else {
+                    showMessage('Variant group not found in product data.', true);
+                    appState.isLoading = false;
+                    renderApp();
+                    return;
+                }
+
+                const response = await fetch(`${BASE_URL}/products/${productId}`, {
+                    method: 'PUT',
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(productToUpdate), // Send the entire updated product object
+                });
+
+                if (response.ok) {
+                    const updatedProduct = (await response.json()).product;
+                    appState.products[productIndex] = updatedProduct;
+                    showMessage(`Variant group "${variantGroupName}" for "${productName}" deleted successfully!`, false);
+                } else {
+                    const errorBody = await response.json();
+                    showMessage(`Failed to delete variant group "${variantGroupName}": ${errorBody.message ?? response.status}`, true);
+                    // Re-fetch products to ensure UI reflects actual backend state if deletion failed
+                    fetchProducts();
+                }
+            } catch (e) {
+                showMessage(`Error deleting variant group "${variantGroupName}": ${e.message}`, true);
+                // Re-fetch products to ensure UI reflects actual backend state if an error occurred
+                fetchProducts();
+            } finally {
+                appState.isLoading = false;
+                renderApp(); // Hide loading indicator and re-render
+            }
+        }
+
+        // --- UI Rendering Functions ---
+
+        /**
+         * Main function to render the entire UI based on current state.
+         */
+        function renderApp() {
+            // Hide all main content sections initially
+            loadingIndicator.classList.add('hidden');
+            permissionDeniedMessage.classList.add('hidden');
+            noProductsFoundMessage.classList.add('hidden');
+            productsListContainer.classList.add('hidden');
+
+            if (appState.userRole === null) {
+                // Role is still loading
+                loadingIndicator.classList.remove('hidden');
+            } else if (appState.userRole !== "admin" && appState.userRole !== "stockagent") {
+                // Permission denied
+                permissionDeniedMessage.classList.remove('hidden');
+            } else if (appState.isLoading) {
+                // Products are loading
+                loadingIndicator.classList.remove('hidden');
+            } else if (appState.products.length === 0) {
+                // No products found
+                noProductsFoundMessage.classList.remove('hidden');
+            } else {
+                // Render products list
+                productsListContainer.classList.remove('hidden');
+                renderProductsList();
+            }
+        }
+
+        /**
+         * Renders the list of products.
+         */
+        function renderProductsList() {
+            productsListContainer.innerHTML = ''; // Clear existing cards
+
+            appState.products.forEach((product, index) => {
+                const imageUrl = buildAbsoluteImageUrl(product.images && product.images.length > 0 ? product.images[0] : null);
+                const variantsData = product.variants || [];
+
+                const productCard = document.createElement('div');
+                productCard.className = 'bg-white rounded-xl shadow-lg p-4 mb-4';
+                productCard.innerHTML = `
+                    <details class="group">
+                        <summary class="flex items-center p-2 cursor-pointer">
+                            <div class="flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden mr-4 border border-gray-200">
+                                <img src="${imageUrl}" alt="${product.name}" class="w-full h-full object-cover" onerror="this.onerror=null;this.src='https://placehold.co/70x70/EEEEEE/333333?text=N/A'; this.classList.add('p-2');">
+                            </div>
+                            <div class="flex-1">
+                                <h3 class="text-lg font-bold text-gray-900">${product.name || 'N/A'}</h3>
+                                <p class="text-sm text-gray-700">Price: $${product.price?.toFixed(2) ?? 'N/A'}</p>
+                            </div>
+                            <div class="flex-shrink-0 ml-4 space-x-2">
+                                ${appState.userRole === "admin" ? `
+                                    <button class="delete-product-btn p-2 text-red-600 rounded-full hover:bg-red-100 transition duration-300" data-product-id="${product._id}" data-product-name="${product.name}" data-index="${index}" title="Delete Product">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                ` : ''}
+                            </div>
+                            <i class="fas fa-chevron-down ml-4 text-gray-700 group-open:rotate-180 transition-transform"></i>
+                        </summary>
+                        <div class="p-4 pt-0 border-t border-gray-200 bg-gray-50">
+                            <p class="text-gray-800 mb-2"><strong>Description:</strong> ${product.description || 'No description available.'}</p>
+                            ${product.custom_option ? `<p class="text-gray-800 mb-2"><strong>Custom Option:</strong> ${product.custom_option}</p>` : ''}
+                            
+                            <!-- Overall Product Stock -->
+                            <div class="flex items-center mt-4 mb-2">
+                                <span class="font-semibold text-gray-800">Overall Stock:</span>
+                                <span class="ml-2 text-gray-700">${product.quantity ?? 'N/A'}</span>
+                                ${ (appState.userRole === "admin" || appState.userRole === "stockagent") ? `
+                                    <button class="edit-overall-quantity-btn ml-2 p-1 text-blue-600 rounded-full hover:bg-blue-100 transition duration-300"
+                                            data-product-id="${product._id}" data-product-index="${index}" data-current-quantity="${product.quantity ?? 0}" title="Edit Overall Stock">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                ` : ''}
+                            </div>
+
+                            ${variantsData.length > 0 ? `
+                                <h4 class="font-semibold text-gray-800 mt-4 mb-2">Variants:</h4>
+                                <div class="space-y-2">
+                                    ${variantsData.map((variant, vIndex) => `
+                                        <div class="bg-white p-3 rounded-lg border border-gray-200 flex items-center justify-between flex-wrap">
+                                            <div class="flex-1 min-w-[150px] mr-2">
+                                                <p class="text-sm text-gray-800"><strong>Colors:</strong> ${(variant.colors || []).join(', ')}</p>
+                                                <p class="text-sm text-gray-800"><strong>Sizes:</strong> ${(variant.sizes || []).join(', ')}</p>
+                                                <p class="text-xs text-gray-600">ID: ${variant._id || 'N/A'}</p>
+                                            </div>
+                                            ${ (appState.userRole === "admin" || appState.userRole === "stockagent") ? `
+                                                <div class="flex space-x-2 mt-2 sm:mt-0">
+                                                    <button class="edit-variant-group-btn px-3 py-1 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition duration-300 text-xs"
+                                                            data-product-id="${product._id}" data-product-index="${index}" data-variant-group-index="${vIndex}"
+                                                            data-colors="${(variant.colors || []).join(', ')}" data-sizes="${(variant.sizes || []).join(', ')}" title="Edit Variant Group">
+                                                        <i class="fas fa-edit"></i> Edit
+                                                    </button>
+                                                    <button class="delete-variant-group-btn px-3 py-1 bg-red-500 text-white rounded-md hover:bg-red-600 transition duration-300 text-xs"
+                                                            data-product-id="${product._id}" data-product-index="${index}" data-variant-group-index="${vIndex}"
+                                                            data-colors="${(variant.colors || []).join(', ')}" data-sizes="${(variant.sizes || []).join(', ')}" title="Delete Variant Group">
+                                                        <i class="fas fa-trash"></i> Delete
+                                                    </button>
+                                                </div>
+                                            ` : ''}
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            ` : product.variants ? `<p class="text-gray-700 italic">No variants specified.</p>` : ''}
+                        </div>
+                    </details>
+                `;
+                productsListContainer.appendChild(productCard);
+            });
+
+            // Attach event listeners after rendering
+            productsListContainer.querySelectorAll('.delete-product-btn').forEach(button => {
+                button.onclick = (e) => {
+                    const productId = e.currentTarget.dataset.productId;
+                    const productName = e.currentTarget.dataset.productName;
+                    const index = parseInt(e.currentTarget.dataset.index);
+                    deleteProduct(productId, productName, index);
+                };
+            });
+
+            productsListContainer.querySelectorAll('.edit-overall-quantity-btn').forEach(button => {
+                button.onclick = (e) => {
+                    const productId = e.currentTarget.dataset.productId;
+                    const productIndex = parseInt(e.currentTarget.dataset.productIndex);
+                    const currentQuantity = parseInt(e.currentTarget.dataset.currentQuantity);
+                    showEditOverallQuantityDialog(productId, productIndex, currentQuantity);
+                };
+            });
+
+            productsListContainer.querySelectorAll('.edit-variant-group-btn').forEach(button => {
+                button.onclick = (e) => {
+                    const productId = e.currentTarget.dataset.productId;
+                    const productIndex = parseInt(e.currentTarget.dataset.productIndex);
+                    const variantGroupIndex = parseInt(e.currentTarget.dataset.variantGroupIndex);
+                    const colors = e.currentTarget.dataset.colors.split(',').map(s => s.trim()).filter(s => s.length > 0);
+                    const sizes = e.currentTarget.dataset.sizes.split(',').map(s => s.trim()).filter(s => s.length > 0);
+                    const variantGroup = appState.products[productIndex].variants[variantGroupIndex]; // Get the actual object
+                    showEditVariantGroupDialog(productId, productIndex, variantGroupIndex, variantGroup);
+                };
+            });
+
+            productsListContainer.querySelectorAll('.delete-variant-group-btn').forEach(button => {
+                button.onclick = (e) => {
+                    const productId = e.currentTarget.dataset.productId;
+                    const productIndex = parseInt(e.currentTarget.dataset.productIndex);
+                    const variantGroupIndex = parseInt(e.currentTarget.dataset.variantGroupIndex);
+                    const colorsText = e.currentTarget.dataset.colors;
+                    const sizesText = e.currentTarget.dataset.sizes;
+                    deleteProductVariantGroup(productId, productIndex, variantGroupIndex, colorsText, sizesText);
+                };
+            });
+        }
+
+        // --- Dialog Functions ---
+
+        /**
+         * Displays a dialog to edit the overall product quantity.
+         */
+        function showEditOverallQuantityDialog(productId, productIndex, currentQuantity) {
+            appState.currentEditProduct = appState.products[productIndex];
+            appState.currentEditProductIndex = productIndex;
+            editOverallQuantityInput.value = currentQuantity.toString();
+            showModal(editOverallQuantityModal);
+        }
+
+        /**
+         * Displays a dialog to edit the colors and sizes of a variant group.
+         */
+        function showEditVariantGroupDialog(productId, productIndex, variantGroupIndex, variantGroup) {
+            appState.currentEditProduct = appState.products[productIndex];
+            appState.currentEditProductIndex = productIndex;
+            appState.currentEditVariantGroup = variantGroup;
+            appState.currentEditVariantGroupIndex = variantGroupIndex;
+
+            editVariantColorsInput.value = (variantGroup.colors || []).join(', ');
+            editVariantSizesInput.value = (variantGroup.sizes || []).join(', ');
+            showModal(editVariantGroupModal);
+        }
+
+        // --- Event Listeners and Initial Load ---
+
+        document.addEventListener('DOMContentLoaded', () => {
+            loadUserRole(); // Load user role first
+            fetchProducts(); // Then fetch products
+
+            // Go to Dashboard Button
+            document.getElementById('go-to-dashboard-btn').addEventListener('click', () => {
+                window.location.href = 'admin-panel.html'; // Navigate back to the main admin dashboard
+            });
+
+            // Overall Quantity Edit Modal Listeners
+            saveOverallQuantityEditBtn.addEventListener('click', async () => {
+                const newQty = parseInt(editOverallQuantityInput.value);
+                if (!isNaN(newQty) && newQty >= 0) {
+                    hideModal(editOverallQuantityModal);
+                    await updateProductData(
+                        appState.currentEditProduct._id,
+                        appState.currentEditProductIndex,
+                        { newQuantity: newQty }
+                    );
+                } else {
+                    showMessage('Please enter a valid non-negative number for quantity.', true);
+                }
+            });
+            cancelOverallQuantityEditBtn.addEventListener('click', () => hideModal(editOverallQuantityModal));
+
+            // Variant Group Edit Modal Listeners
+            saveVariantGroupEditBtn.addEventListener('click', async () => {
+                const newColors = editVariantColorsInput.value.split(',').map(s => s.trim()).filter(s => s.length > 0);
+                const newSizes = editVariantSizesInput.value.split(',').map(s => s.trim()).filter(s => s.length > 0);
+
+                const updatedGroup = { ...appState.currentEditVariantGroup };
+                updatedGroup.colors = newColors;
+                updatedGroup.sizes = newSizes;
+
+                hideModal(editVariantGroupModal);
+                await updateProductData(
+                    appState.currentEditProduct._id,
+                    appState.currentEditProductIndex,
+                    {
+                        updatedVariantGroup: updatedGroup,
+                        variantGroupIndex: appState.currentEditVariantGroupIndex
+                    }
+                );
+            });
+            cancelVariantGroupEditBtn.addEventListener('click', () => hideModal(editVariantGroupModal));
+        });
+    </script>
+</body>
+</html>

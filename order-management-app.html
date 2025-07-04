@@ -11,6 +11,8 @@
     <!-- jsPDF for PDF generation -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+    <!-- Tone.js for sound effects -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.min.js"></script>
     <style>
         body {
             font-family: 'Inter', sans-serif;
@@ -30,6 +32,7 @@
         }
         ::-webkit-scrollbar-thumb:hover {
             background: #555;
+            border-radius: 10px;
         }
         .modal {
             display: none; /* Hidden by default */
@@ -308,8 +311,52 @@
         const agentReportContent = document.getElementById('agent-report-content');
         const agentReportTitle = document.getElementById('agent-report-title');
 
+        // Tone.js Synth for notification sound
+        let notificationSynth;
 
         // --- Utility Functions ---
+
+        /**
+         * Initializes the Tone.js synth for playing notification sounds.
+         */
+        function _initNotificationSound() {
+            // Check if Tone is already initialized or if it's running in an environment where audio context might be suspended
+            if (Tone.context.state !== 'running') {
+                // Tone.start() needs to be called on a user gesture.
+                // We'll call it on the first interaction (e.g., DOMContentLoaded or first button click).
+                // For now, just create the synth.
+                console.log('DEBUG: Tone.js audio context not running. Will start on first user interaction.');
+            }
+
+            // Create a simple synth for notification
+            notificationSynth = new Tone.Synth({
+                oscillator: {
+                    type: "sine"
+                },
+                envelope: {
+                    attack: 0.005,
+                    decay: 0.1,
+                    sustain: 0.05,
+                    release: 0.5
+                }
+            }).toDestination();
+        }
+
+        /**
+         * Plays a short notification sound.
+         */
+        async function _playNotificationSound() {
+            // Ensure audio context is running
+            if (Tone.context.state !== 'running') {
+                await Tone.start();
+                console.log('DEBUG: Tone.js audio context started.');
+            }
+            if (notificationSynth) {
+                notificationSynth.triggerAttackRelease("C5", "8n"); // Play a C5 note for an 8th note duration
+            } else {
+                console.warn('Notification synth not initialized.');
+            }
+        }
 
         /**
          * Displays a toast message at the bottom of the screen.
@@ -527,19 +574,19 @@
                 let matchesDateRange = true;
                 if (_currentDateFilter === 'today') {
                     matchesDateRange = createdAt.getTime() >= todayUtcStart.getTime() &&
-                                       createdAt.getTime() < new Date(todayUtcStart.getTime() + 24 * 60 * 60 * 1000).getTime();
+                                         createdAt.getTime() < new Date(todayUtcStart.getTime() + 24 * 60 * 60 * 1000).getTime();
                 } else if (_currentDateFilter === 'thisWeek') {
                     matchesDateRange = createdAt.getTime() >= thisWeekUtcStart.getTime() &&
-                                       createdAt.getTime() < new Date(thisWeekUtcStart.getTime() + 7 * 24 * 60 * 60 * 1000).getTime();
+                                         createdAt.getTime() < new Date(thisWeekUtcStart.getTime() + 7 * 24 * 60 * 60 * 1000).getTime();
                 } else if (_currentDateFilter === 'thisMonth') {
                     matchesDateRange = createdAt.getTime() >= thisMonthUtcStart.getTime() &&
-                                       createdAt.getTime() < new Date(Date.UTC(now.getFullYear(), now.getMonth() + 1, 1)).getTime();
+                                         createdAt.getTime() < new Date(Date.UTC(now.getFullYear(), now.getMonth() + 1, 1)).getTime();
                 } else if (_currentDateFilter === 'custom') {
                     if (_customStartDate && _customEndDate) {
                         const customStartUtc = new Date(Date.UTC(_customStartDate.getFullYear(), _customStartDate.getMonth(), _customStartDate.getDate()));
                         const customEndUtc = new Date(Date.UTC(_customEndDate.getFullYear(), _customEndDate.getMonth(), _customEndDate.getDate()));
                         matchesDateRange = (createdAt.getTime() >= customStartUtc.getTime() &&
-                                            createdAt.getTime() < new Date(customEndUtc.getTime() + 24 * 60 * 60 * 1000).getTime());
+                                             createdAt.getTime() < new Date(customEndUtc.getTime() + 24 * 60 * 60 * 1000).getTime());
                     } else {
                         matchesDateRange = false;
                     }
@@ -657,6 +704,7 @@
                 if (newOrderIds.size > 0) {
                     console.log(`DEBUG: New orders detected! Count: ${newOrderIds.size}`);
                     _showMessage('🔔 New order received! Refreshing data...', false);
+                    _playNotificationSound(); // Play sound for new order
                     _allOrders = currentOrders.map(order => {
                         let totalPrice = 0.0;
                         if (order.products && Array.isArray(order.products)) {
@@ -1261,19 +1309,19 @@
                 let matchesDateRange = true;
                 if (_currentDateFilter === 'today') {
                     matchesDateRange = createdAt.getTime() >= todayUtcStart.getTime() &&
-                                       createdAt.getTime() < new Date(todayUtcStart.getTime() + 24 * 60 * 60 * 1000).getTime();
+                                         createdAt.getTime() < new Date(todayUtcStart.getTime() + 24 * 60 * 60 * 1000).getTime();
                 } else if (_currentDateFilter === 'thisWeek') {
                     matchesDateRange = createdAt.getTime() >= thisWeekUtcStart.getTime() &&
-                                       createdAt.getTime() < new Date(thisWeekUtcStart.getTime() + 7 * 24 * 60 * 60 * 1000).getTime();
+                                         createdAt.getTime() < new Date(thisWeekUtcStart.getTime() + 7 * 24 * 60 * 60 * 1000).getTime();
                 } else if (_currentDateFilter === 'thisMonth') {
                     matchesDateRange = createdAt.getTime() >= thisMonthUtcStart.getTime() &&
-                                       createdAt.getTime() < new Date(Date.UTC(now.getFullYear(), now.getMonth() + 1, 1)).getTime();
+                                         createdAt.getTime() < new Date(Date.UTC(now.getFullYear(), now.getMonth() + 1, 1)).getTime();
                 } else if (_currentDateFilter === 'custom') {
                     if (_customStartDate && _customEndDate) {
                         const customStartUtc = new Date(Date.UTC(_customStartDate.getFullYear(), _customStartDate.getMonth(), _customStartDate.getDate()));
                         const customEndUtc = new Date(Date.UTC(_customEndDate.getFullYear(), _customEndDate.getMonth(), _customEndDate.getDate()));
                         matchesDateRange = (createdAt.getTime() >= customStartUtc.getTime() &&
-                                            createdAt.getTime() < new Date(customEndUtc.getTime() + 24 * 60 * 60 * 1000).getTime());
+                                             createdAt.getTime() < new Date(customEndUtc.getTime() + 24 * 60 * 60 * 1000).getTime());
                     } else {
                         matchesDateRange = false;
                     }
@@ -1734,6 +1782,8 @@
         document.addEventListener('DOMContentLoaded', async () => {
             _loadCurrentUserRole();
             _loadYalitecApiCredentials();
+            _initNotificationSound(); // Initialize Tone.js synth
+
             // Load order notes from localStorage
             const storedNotes = localStorage.getItem('orderNotes');
             if (storedNotes) {

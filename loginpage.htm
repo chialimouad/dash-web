@@ -254,7 +254,7 @@
                         localStorage.setItem('index', index); // Store index as string, parse when retrieved
 
                         // Redirect to the new admin.html page
-                        window.location.href = 'admin.html';
+                        window.location.href = 'admin-panel.html';
 
                     } else {
                         const errorData = await response.json();
@@ -367,7 +367,7 @@
                         renderContactSupportPage();
                     } else if (fetchedIndex === 0) {
                         // Redirect to admin.html
-                        window.location.href = 'admin.html';
+                        window.location.href = 'admin-panel.html';
                     } else {
                         console.error('Unexpected index value:', fetchedIndex);
                         goToLogin('An unexpected system status was encountered. Please log in again.');

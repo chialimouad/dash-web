@@ -120,7 +120,7 @@
         <!-- Search Bar -->
         <div class="mb-4">
             <input type="text" id="search-input" placeholder="Search by Phone Number or Name or Order ID"
-                           class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400 text-gray-900 placeholder-gray-500">
+                            class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400 text-gray-900 placeholder-gray-500">
         </div>
 
         <!-- Date Filters -->
@@ -574,13 +574,13 @@
                 let matchesDateRange = true;
                 if (_currentDateFilter === 'today') {
                     matchesDateRange = createdAt.getTime() >= todayUtcStart.getTime() &&
-                                         createdAt.getTime() < new Date(todayUtcStart.getTime() + 24 * 60 * 60 * 1000).getTime();
+                                             createdAt.getTime() < new Date(todayUtcStart.getTime() + 24 * 60 * 60 * 1000).getTime();
                 } else if (_currentDateFilter === 'thisWeek') {
                     matchesDateRange = createdAt.getTime() >= thisWeekUtcStart.getTime() &&
-                                         createdAt.getTime() < new Date(thisWeekUtcStart.getTime() + 7 * 24 * 60 * 60 * 1000).getTime();
+                                             createdAt.getTime() < new Date(thisWeekUtcStart.getTime() + 7 * 24 * 60 * 60 * 1000).getTime();
                 } else if (_currentDateFilter === 'thisMonth') {
                     matchesDateRange = createdAt.getTime() >= thisMonthUtcStart.getTime() &&
-                                         createdAt.getTime() < new Date(Date.UTC(now.getFullYear(), now.getMonth() + 1, 1)).getTime();
+                                             createdAt.getTime() < new Date(Date.UTC(now.getFullYear(), now.getMonth() + 1, 1)).getTime();
                 } else if (_currentDateFilter === 'custom') {
                     if (_customStartDate && _customEndDate) {
                         const customStartUtc = new Date(Date.UTC(_customStartDate.getFullYear(), _customStartDate.getMonth(), _customStartDate.getDate()));
@@ -668,6 +668,46 @@
         }
 
         /**
+         * Simulates sending an email notification for a new order.
+         * In a real application, this would involve a backend service or a secure third-party email API.
+         * Direct client-side email sending is generally not possible or secure due to browser security policies
+         * and the need to protect API keys.
+         * @param {object} newOrder - The new order object.
+         */
+        function _sendEmailNotification(newOrder) {
+            const recipientEmail = 'sheekaoff@gmail.com';
+            const subject = `New Order Received: ${newOrder._id}`;
+            const body = `
+A new order has been placed!
+
+Order ID: ${newOrder._id}
+Customer Name: ${newOrder.fullName || 'N/A'}
+Phone Number: ${newOrder.phoneNumber || 'N/A'}
+Wilaya: ${newOrder.wilaya || 'N/A'}
+Commune: ${newOrder.commune || 'N/A'}
+Total Price: DZD${newOrder.totalPrice || '0.00'}
+Status: ${newOrder.status || 'N/A'}
+Created At: ${_formatDate(newOrder.createdAt)}
+
+Products:
+${newOrder.products && Array.isArray(newOrder.products) && newOrder.products.length > 0
+    ? newOrder.products.map(p => `  - ${p.name || 'N/A'} (Qty: ${p.quantity || 1}, Color: ${p.color || 'N/A'}, Size: ${p.size || 'N/A'})`).join('\n')
+    : '  No products listed.'
+}
+
+Please log in to the Order Management system to view details and process.
+            `;
+
+            console.log('--- Email Notification Simulation ---');
+            console.log(`To: ${recipientEmail}`);
+            console.log(`Subject: ${subject}`);
+            console.log(`Body:\n${body}`);
+            console.log('------------------------------------');
+
+            _showMessage(`📧 Email notification simulated for new order ${newOrder._id}. (Check console for details)`, false);
+        }
+
+        /**
          * Starts a periodic timer to poll for new orders from the backend.
          */
         function _startPollingForNewOrders() {
@@ -705,6 +745,13 @@
                     console.log(`DEBUG: New orders detected! Count: ${newOrderIds.size}`);
                     _showMessage('🔔 New order received! Refreshing data...', false);
                     _playNotificationSound(); // Play sound for new order
+
+                    // Find the actual new order objects and send email notifications
+                    const newlyAddedOrders = currentOrders.filter(order => newOrderIds.has(order._id.toString()));
+                    for (const newOrder of newlyAddedOrders) {
+                        _sendEmailNotification(newOrder); // Simulate sending email for each new order
+                    }
+
                     _allOrders = currentOrders.map(order => {
                         let totalPrice = 0.0;
                         if (order.products && Array.isArray(order.products)) {
@@ -1309,13 +1356,13 @@
                 let matchesDateRange = true;
                 if (_currentDateFilter === 'today') {
                     matchesDateRange = createdAt.getTime() >= todayUtcStart.getTime() &&
-                                         createdAt.getTime() < new Date(todayUtcStart.getTime() + 24 * 60 * 60 * 1000).getTime();
+                                             createdAt.getTime() < new Date(todayUtcStart.getTime() + 24 * 60 * 60 * 1000).getTime();
                 } else if (_currentDateFilter === 'thisWeek') {
                     matchesDateRange = createdAt.getTime() >= thisWeekUtcStart.getTime() &&
-                                         createdAt.getTime() < new Date(thisWeekUtcStart.getTime() + 7 * 24 * 60 * 60 * 1000).getTime();
+                                             createdAt.getTime() < new Date(thisWeekUtcStart.getTime() + 7 * 24 * 60 * 60 * 1000).getTime();
                 } else if (_currentDateFilter === 'thisMonth') {
                     matchesDateRange = createdAt.getTime() >= thisMonthUtcStart.getTime() &&
-                                         createdAt.getTime() < new Date(Date.UTC(now.getFullYear(), now.getMonth() + 1, 1)).getTime();
+                                             createdAt.getTime() < new Date(Date.UTC(now.getFullYear(), now.getMonth() + 1, 1)).getTime();
                 } else if (_currentDateFilter === 'custom') {
                     if (_customStartDate && _customEndDate) {
                         const customStartUtc = new Date(Date.UTC(_customStartDate.getFullYear(), _customStartDate.getMonth(), _customStartDate.getDate()));

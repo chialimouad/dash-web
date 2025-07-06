@@ -74,6 +74,9 @@
             opacity: 0;
             transition: opacity 0.3s ease-in-out;
             z-index: 1001;
+            display: flex; /* Use flexbox for toast content */
+            align-items: center;
+            gap: 8px; /* Space between text and button */
         }
         .toast.show {
             opacity: 1;
@@ -83,6 +86,11 @@
         }
         .toast.success {
             background-color: #16a34a; /* green-600 */
+        }
+        .toast a {
+            color: #fff;
+            text-decoration: underline;
+            font-weight: bold;
         }
     </style>
 </head>
@@ -313,6 +321,7 @@
 
         // Tone.js Synth for notification sound
         let notificationSynth;
+        let audioContextStarted = false; // Flag to track audio context state
 
         // --- Utility Functions ---
 
@@ -320,14 +329,6 @@
          * Initializes the Tone.js synth for playing notification sounds.
          */
         function _initNotificationSound() {
-            // Check if Tone is already initialized or if it's running in an environment where audio context might be suspended
-            if (Tone.context.state !== 'running') {
-                // Tone.start() needs to be called on a user gesture.
-                // We'll call it on the first interaction (e.g., DOMContentLoaded or first button click).
-                // For now, just create the synth.
-                console.log('DEBUG: Tone.js audio context not running. Will start on first user interaction.');
-            }
-
             // Create a simple synth for notification
             notificationSynth = new Tone.Synth({
                 oscillator: {
@@ -346,10 +347,16 @@
          * Plays a short notification sound.
          */
         async function _playNotificationSound() {
-            // Ensure audio context is running
-            if (Tone.context.state !== 'running') {
-                await Tone.start();
-                console.log('DEBUG: Tone.js audio context started.');
+            // Ensure audio context is running on user interaction
+            if (!audioContextStarted) {
+                try {
+                    await Tone.start();
+                    audioContextStarted = true;
+                    console.log('DEBUG: Tone.js audio context started.');
+                } catch (e) {
+                    console.warn('Could not start Tone.js audio context:', e);
+                    return; // Do not attempt to play sound if context fails to start
+                }
             }
             if (notificationSynth) {
                 notificationSynth.triggerAttackRelease("C5", "8n"); // Play a C5 note for an 8th note duration
@@ -362,15 +369,19 @@
          * Displays a toast message at the bottom of the screen.
          * @param {string} message - The message to display.
          * @param {boolean} isError - True if it's an error message, false for success.
+         * @param {string|null} actionHtml - Optional HTML for an action link/button within the toast.
          */
-        function _showMessage(message, isError = false) {
-            toastMessage.textContent = message;
+        function _showMessage(message, isError = false, actionHtml = null) {
+            toastMessage.innerHTML = message;
+            if (actionHtml) {
+                toastMessage.innerHTML += ` ${actionHtml}`;
+            }
             toastMessage.classList.remove('error', 'success');
             toastMessage.classList.add(isError ? 'error' : 'success');
             toastMessage.classList.add('show');
             setTimeout(() => {
                 toastMessage.classList.remove('show');
-            }, 3000);
+            }, 5000); // Display for 5 seconds
         }
 
         /**
@@ -668,10 +679,7 @@
         }
 
         /**
-         * Simulates sending an email notification for a new order.
-         * In a real application, this would involve a backend service or a secure third-party email API.
-         * Direct client-side email sending is generally not possible or secure due to browser security policies
-         * and the need to protect API keys.
+         * Simulates sending an email notification for a new order using a mailto link.
          * @param {object} newOrder - The new order object.
          */
         function _sendEmailNotification(newOrder) {
@@ -698,13 +706,21 @@ ${newOrder.products && Array.isArray(newOrder.products) && newOrder.products.len
 Please log in to the Order Management system to view details and process.
             `;
 
-            console.log('--- Email Notification Simulation ---');
+            const mailtoLink = `mailto:${recipientEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+
+            console.log('--- Email Notification Simulation (Mailto Link) ---');
             console.log(`To: ${recipientEmail}`);
             console.log(`Subject: ${subject}`);
             console.log(`Body:\n${body}`);
+            console.log(`Mailto Link: ${mailtoLink}`);
             console.log('------------------------------------');
 
-            _showMessage(`📧 Email notification simulated for new order ${newOrder._id}. (Check console for details)`, false);
+            // Display a toast with a clickable link
+            _showMessage(
+                `🔔 New order received! Order ID: ${newOrder._id}.`,
+                false,
+                `<a href="${mailtoLink}" target="_blank" class="text-white underline font-bold hover:text-gray-200">Send Email Now</a>`
+            );
         }
 
         /**
@@ -743,7 +759,6 @@ Please log in to the Order Management system to view details and process.
 
                 if (newOrderIds.size > 0) {
                     console.log(`DEBUG: New orders detected! Count: ${newOrderIds.size}`);
-                    _showMessage('🔔 New order received! Refreshing data...', false);
                     _playNotificationSound(); // Play sound for new order
 
                     // Find the actual new order objects and send email notifications
@@ -1849,6 +1864,19 @@ Please log in to the Order Management system to view details and process.
             document.getElementById('close-report-btn').addEventListener('click', () => orderReportPage.classList.add('hidden'));
             document.getElementById('agent-report-btn').addEventListener('click', _generateAgentStatsReport);
             document.getElementById('close-agent-report-btn').addEventListener('click', () => agentReportPage.classList.add('hidden'));
+
+            // Start audio context on first user interaction (e.g., any click/tap)
+            document.addEventListener('click', async () => {
+                if (!audioContextStarted) {
+                    try {
+                        await Tone.start();
+                        audioContextStarted = true;
+                        console.log('DEBUG: AudioContext started on user interaction.');
+                    } catch (e) {
+                        console.warn('Failed to start AudioContext on user interaction:', e);
+                    }
+                }
+            }, { once: true }); // Only run once
 
             // Initial render
             renderApp();

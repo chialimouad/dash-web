@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register Account</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts - Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Font Awesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6; /* Light background color */
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 1rem; /* Add some padding for smaller screens */
+            box-sizing: border-box;
+        }
+
+        /* Custom scrollbar for better aesthetics */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+
+        /* Card styling for form and user list */
+        .custom-card {
+            background-color: white;
+            border-radius: 1.25rem; /* 20px */
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); /* Flutter-like elevation */
+            padding: 1.5rem; /* 30px */
+        }
+
+        /* Input field styling */
+        .custom-input {
+            width: 100%;
+            padding: 0.75rem 1rem; /* py-3 px-4 */
+            border-radius: 0.75rem; /* 12px */
+            background-color: #f0f4f8; /* blueGrey-50 */
+            border: 1px solid #cbd5e0; /* blueGrey-200 */
+            color: #1a202c; /* blueGrey-900 */
+            transition: border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+        }
+        .custom-input:focus {
+            outline: none;
+            border-color: #42A5F5; /* Highlight on focus */
+            box-shadow: 0 0 0 3px rgba(66, 165, 245, 0.3);
+        }
+        .custom-input.error {
+            border-color: #ef4444; /* Red-500 */
+        }
+        .custom-input.error:focus {
+            box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.3);
+        }
+
+        /* Button styling */
+        .custom-button {
+            width: 100%;
+            padding: 0.875rem 1.5rem; /* py-3.5 px-6 */
+            border-radius: 0.75rem; /* 12px */
+            background-color: #1565C0; /* Deep blue */
+            color: white;
+            font-weight: bold;
+            font-size: 1.125rem; /* 18px */
+            box-shadow: 0 5px 10px rgba(66, 165, 245, 0.4); /* blueAccent.withOpacity(0.4) */
+            transition: background-color 0.2s ease-in-out, transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+        }
+        .custom-button:hover:not(:disabled) {
+            background-color: #0d47a1; /* Darker blue on hover */
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(66, 165, 245, 0.6);
+        }
+        .custom-button:disabled {
+            background-color: #9ca3af; /* Gray-400 */
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+
+        /* Message box (snackbar) styling */
+        @keyframes fadeInOut {
+            0%, 100% { opacity: 0; transform: translateY(20px); }
+            10%, 90% { opacity: 1; transform: translateY(0); }
+        }
+        .message-box {
+            animation: fadeInOut 3s forwards;
+        }
+
+        /* Responsive layout for desktop */
+        @media (min-width: 800px) {
+            body {
+                align-items: center; /* Center content vertically on desktop */
+            }
+            .desktop-layout {
+                display: flex;
+                width: 100%;
+                max-width: 1200px; /* Max width for desktop layout */
+                height: 80vh; /* Make it take up more vertical space */
+                border-radius: 1.5rem; /* 24px */
+                overflow: hidden; /* Hide overflow from rounded corners */
+                box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+            }
+            .desktop-left-panel {
+                flex: 1;
+                background: linear-gradient(to bottom right, #ffffff, #ffffff); /* White gradient */
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                padding: 2rem;
+            }
+            .desktop-right-panel {
+                flex: 1;
+                padding: 2.5rem 3.75rem; /* 40px 60px */
+                overflow-y: auto; /* Enable scrolling for user list */
+            }
+            .user-list-container {
+                height: 250px; /* Constrain height for desktop user list */
+                overflow-y: auto;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="app-container" class="w-full flex flex-col items-center">
+        <!-- Main content will be rendered here -->
+    </div>
+
+    <!-- Message Box for Alerts -->
+    <div id="message-box" class="fixed bottom-4 right-4 bg-gray-800 text-white p-4 rounded-lg shadow-lg hidden z-50">
+        <p id="message-text"></p>
+    </div>
+
+    <script>
+        // Define the backend base URL
+        const BASE_URL = 'https://sheeka.onrender.com';
+
+        // Global state management
+        const appState = {
+            name: '',
+            email: '',
+            password: '',
+            role: 'user',
+            isLoading: false,
+            users: [], // Stores registered users
+        };
+
+        // DOM element references
+        const appContainer = document.getElementById('app-container');
+        const messageBox = document.getElementById('message-box');
+        const messageText = document.getElementById('message-text');
+
+        /**
+         * Displays a snackbar-like message at the bottom of the screen.
+         * @param {string} message - The message to display.
+         * @param {boolean} isError - True if it's an error message, false for success.
+         */
+        function showMessage(message, isError = false) {
+            messageText.textContent = message;
+            messageBox.classList.remove('hidden', 'bg-green-600', 'bg-red-600', 'message-box');
+            if (isError) {
+                messageBox.classList.add('bg-red-600');
+            } else {
+                messageBox.classList.add('bg-green-600');
+            }
+            messageBox.classList.add('message-box'); // Apply animation
+            setTimeout(() => {
+                messageBox.classList.add('hidden');
+                messageBox.classList.remove('message-box'); // Remove animation class after it finishes
+            }, 3000); // Hide after 3 seconds
+        }
+
+        /**
+         * Renders the entire application UI based on the current appState.
+         */
+        function renderApp() {
+            const isMobile = window.innerWidth < 800;
+            appContainer.innerHTML = ''; // Clear previous content
+
+            if (isMobile) {
+                appContainer.innerHTML = `
+                    <div class="w-full max-w-md mx-auto py-10">
+                        ${renderAnimatedForm()}
+                        <div class="mt-8">
+                            ${renderUserList()}
+                        </div>
+                    </div>
+                `;
+            } else {
+                appContainer.innerHTML = `
+                    <div class="desktop-layout">
+                        <div class="desktop-left-panel">
+                            <div class="text-center">
+                                <img src="https://placehold.co/200x200/FFFFFF/000000?text=Sheeka+Logo" alt="Sheeka Logo" class="mx-auto" />
+                                <h2 class="text-2xl font-bold text-gray-800 mt-4">Welcome to Sheeka Admin</h2>
+                                <p class="text-gray-600">Manage your e-commerce platform efficiently.</p>
+                            </div>
+                        </div>
+                        <div class="desktop-right-panel">
+                            ${renderAnimatedForm()}
+                            <div class="mt-8 user-list-container">
+                                ${renderUserList()}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            // Re-attach event listeners after rendering
+            attachEventListeners();
+        }
+
+        /**
+         * Renders the animated registration form HTML.
+         * For simplicity, the animation is handled by CSS classes on initial load.
+         */
+        function renderAnimatedForm() {
+            return `
+                <div class="custom-card animate-fade-in-up">
+                    <h2 class="text-2xl md:text-3xl font-bold text-blue-900 mb-2">Create Your Account</h2>
+                    <p class="text-gray-600 mb-6">Join Sheeka and start managing your orders!</p>
+                    <form id="register-form">
+                        <div class="mb-4">
+                            <label for="name" class="block text-gray-700 text-sm font-semibold mb-2">Full Name</label>
+                            <div class="relative">
+                                <i class="fas fa-user absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                                <input type="text" id="name" name="name" placeholder="Enter your full name"
+                                       class="custom-input pl-10" value="${appState.name}">
+                                <p class="text-red-500 text-xs mt-1 hidden" id="name-error"></p>
+                            </div>
+                        </div>
+                        <div class="mb-4">
+                            <label for="email" class="block text-gray-700 text-sm font-semibold mb-2">Email</label>
+                            <div class="relative">
+                                <i class="fas fa-envelope absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                                <input type="email" id="email" name="email" placeholder="Enter your email"
+                                       class="custom-input pl-10" value="${appState.email}">
+                                <p class="text-red-500 text-xs mt-1 hidden" id="email-error"></p>
+                            </div>
+                        </div>
+                        <div class="mb-6">
+                            <label for="password" class="block text-gray-700 text-sm font-semibold mb-2">Password</label>
+                            <div class="relative">
+                                <i class="fas fa-lock absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                                <input type="password" id="password" name="password" placeholder="Enter your password"
+                                       class="custom-input pl-10" value="${appState.password}">
+                                <p class="text-red-500 text-xs mt-1 hidden" id="password-error"></p>
+                            </div>
+                        </div>
+                        <div class="mb-6">
+                            <label for="role" class="block text-gray-700 text-sm font-semibold mb-2">Role</label>
+                            <div class="relative">
+                                <i class="fas fa-shield-alt absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                                <select id="role" name="role" class="custom-input appearance-none pr-8 pl-10">
+                                    <option value="user" ${appState.role === 'user' ? 'selected' : ''}>User</option>
+                                    <option value="admin" ${appState.role === 'admin' ? 'selected' : ''}>Admin</option>
+                                    <option value="confirmation" ${appState.role === 'confirmation' ? 'selected' : ''}>Confirmation Agent</option>
+                                    <option value="stockagent" ${appState.role === 'stockagent' ? 'selected' : ''}>Stock Agent</option>
+                                </select>
+                                <i class="fas fa-chevron-down absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"></i>
+                            </div>
+                        </div>
+                        <button type="submit" id="register-btn" class="custom-button">
+                            ${appState.isLoading ? '<i class="fas fa-spinner animate-spin"></i> Loading...' : 'Register'}
+                        </button>
+                    </form>
+                </div>
+            `;
+        }
+
+        /**
+         * Renders the list of registered users.
+         */
+        function renderUserList() {
+            if (appState.users.length === 0) {
+                return `
+                    <div class="text-center text-gray-500 italic p-4 custom-card">
+                        No users registered yet.
+                    </div>
+                `;
+            }
+            return `
+                <div class="custom-card">
+                    <h3 class="text-xl font-bold text-blue-900 mb-4">Registered Users</h3>
+                    <ul class="space-y-3">
+                        ${appState.users.map(user => `
+                            <li class="flex items-center bg-gray-50 p-3 rounded-lg shadow-sm">
+                                <div class="w-10 h-10 bg-blue-200 rounded-full flex items-center justify-center mr-3">
+                                    <i class="fas fa-user text-blue-700"></i>
+                                </div>
+                                <div class="flex-1">
+                                    <p class="font-semibold text-gray-800">${user.name}</p>
+                                    <p class="text-sm text-gray-600">Role: ${user.role}</p>
+                                </div>
+                                <i class="fas fa-arrow-right text-gray-400 text-sm"></i>
+                            </li>
+                        `).join('')}
+                    </ul>
+                </div>
+            `;
+        }
+
+        /**
+         * Attaches event listeners to dynamically created elements.
+         */
+        function attachEventListeners() {
+            const registerForm = document.getElementById('register-form');
+            if (registerForm) {
+                registerForm.addEventListener('submit', handleRegisterSubmit);
+                // Add input event listeners for real-time validation feedback
+                document.getElementById('name').addEventListener('input', validateField);
+                document.getElementById('email').addEventListener('input', validateField);
+                document.getElementById('password').addEventListener('input', validateField);
+            }
+        }
+
+        /**
+         * Validates a single input field and shows/hides error messages.
+         * @param {Event} event - The input event.
+         */
+        function validateField(event) {
+            const input = event.target;
+            const errorElement = document.getElementById(`${input.id}-error`);
+            let errorMessage = '';
+
+            if (input.value.trim() === '') {
+                errorMessage = `Please enter your ${input.id.replace('-', ' ')}`;
+            } else if (input.id === 'email' && !input.value.includes('@')) {
+                errorMessage = 'Please enter a valid email address';
+            } else if (input.id === 'password' && input.value.length < 6) {
+                errorMessage = 'Password must be at least 6 characters long';
+            }
+
+            if (errorMessage) {
+                input.classList.add('error');
+                errorElement.textContent = errorMessage;
+                errorElement.classList.remove('hidden');
+            } else {
+                input.classList.remove('error');
+                errorElement.classList.add('hidden');
+            }
+        }
+
+        /**
+         * Handles the form submission for user registration.
+         * @param {Event} event - The form submission event.
+         */
+        async function handleRegisterSubmit(event) {
+            event.preventDefault(); // Prevent default form submission
+
+            // Get form data
+            appState.name = document.getElementById('name').value.trim();
+            appState.email = document.getElementById('email').value.trim();
+            appState.password = document.getElementById('password').value.trim();
+            appState.role = document.getElementById('role').value;
+
+            // Basic client-side validation
+            let isValid = true;
+            // Trigger validation for all fields
+            ['name', 'email', 'password'].forEach(id => {
+                const input = document.getElementById(id);
+                // Manually trigger input event to run validation logic
+                input.dispatchEvent(new Event('input'));
+                if (input.classList.contains('error')) {
+                    isValid = false;
+                }
+            });
+
+            if (!isValid) {
+                showMessage('Please correct the errors in the form.', true);
+                return;
+            }
+
+            appState.isLoading = true;
+            renderApp(); // Re-render to show loading state
+
+            try {
+                const response = await fetch(`${BASE_URL}/auth/register`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        name: appState.name,
+                        email: appState.email,
+                        password: appState.password,
+                        role: appState.role,
+                    }),
+                });
+
+                appState.isLoading = false;
+
+                if (response.ok || response.status === 201) {
+                    // Assuming successful registration, add user to local list and clear form
+                    appState.users.push({ name: appState.name, role: appState.role });
+                    appState.name = ''; // Clear form fields
+                    appState.email = '';
+                    appState.password = '';
+                    appState.role = 'user'; // Reset role to default
+                    showMessage('Registration successful!', false);
+                } else {
+                    const errorData = await response.json();
+                    showMessage(`Registration failed: ${errorData.message || response.status}`, true);
+                }
+            } catch (error) {
+                appState.isLoading = false;
+                console.error('Error during registration:', error);
+                showMessage(`Error connecting to the server: ${error.message}`, true);
+            } finally {
+                renderApp(); // Re-render to update user list and reset form/loading state
+            }
+        }
+
+        // Initial render when the DOM is fully loaded
+        document.addEventListener('DOMContentLoaded', renderApp);
+
+        // Re-render on window resize to handle responsive layout changes
+        window.addEventListener('resize', renderApp);
+    </script>
+</body>
+</html>

@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Delivery Fees Management</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts - Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Font Awesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6; /* Light gray background */
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start; /* Align to top */
+            padding: 2rem;
+            box-sizing: border-box;
+        }
+        /* Custom scrollbar for better aesthetics */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+
+        .card {
+            transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.15);
+        }
+        .input-field {
+            transition: border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+        }
+        .input-field:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.3); /* Indigo-600 with opacity */
+        }
+        .save-button {
+            transition: background-color 0.2s ease-in-out, transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+        }
+        .save-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.2);
+        }
+    </style>
+</head>
+<body class="flex flex-col items-center">
+    <div class="container mx-auto p-4 bg-white rounded-xl shadow-lg max-w-2xl w-full">
+        <h1 class="text-3xl font-bold text-gray-800 mb-6 text-center">Delivery Fees Management</h1>
+
+        <div id="content-area" class="min-h-[300px] flex flex-col justify-center items-center">
+            <!-- Content will be dynamically loaded here (loading, error, or form) -->
+        </div>
+
+        <div id="save-button-container" class="mt-8 text-center hidden">
+            <button id="save-delivery-fees-btn"
+                    class="save-button bg-indigo-600 text-white px-8 py-3 rounded-xl font-bold text-lg hover:bg-indigo-700 focus:outline-none focus:ring-4 focus:ring-indigo-500 focus:ring-opacity-50">
+                <i class="fas fa-save mr-2"></i> Save Delivery Fees
+            </button>
+        </div>
+
+        <!-- Message Box for Alerts -->
+        <div id="message-box" class="fixed bottom-4 right-4 bg-gray-800 text-white p-4 rounded-lg shadow-lg hidden z-50">
+            <p id="message-text"></p>
+        </div>
+    </div>
+
+    <script>
+        // Define the base URL for your backend API
+        const BASE_URL = 'https://sheeka.onrender.com';
+
+        // Global state management for the application
+        const appState = {
+            siteConfig: null, // Stores the full site configuration
+            deliveryFees: [], // List of delivery fees
+            isLoading: true, // Loading state indicator
+            errorMessage: null, // Stores any error messages
+            primaryColor: '#C8797D', // Default primary color from Flutter code
+        };
+
+        // DOM elements
+        const contentArea = document.getElementById('content-area');
+        const saveButtonContainer = document.getElementById('save-button-container');
+        const saveDeliveryFeesBtn = document.getElementById('save-delivery-fees-btn');
+        const messageBox = document.getElementById('message-box');
+        const messageText = document.getElementById('message-text');
+
+        /**
+         * Displays a message in a floating message box.
+         * @param {string} message - The message to display.
+         * @param {string} type - 'success' or 'error' to determine background color.
+         */
+        function showMessage(message, type = 'info') {
+            messageText.textContent = message;
+            messageBox.classList.remove('hidden', 'bg-green-600', 'bg-red-600', 'bg-gray-800');
+            if (type === 'success') {
+                messageBox.classList.add('bg-green-600');
+            } else if (type === 'error') {
+                messageBox.classList.add('bg-red-600');
+            } else {
+                messageBox.classList.add('bg-gray-800');
+            }
+            messageBox.classList.add('animate-fade-in-up'); // Optional: Add animation class
+            setTimeout(() => {
+                messageBox.classList.add('hidden');
+                messageBox.classList.remove('animate-fade-in-up');
+            }, 3000); // Hide after 3 seconds
+        }
+
+        /**
+         * Fetches the full site configuration from the backend.
+         * This is crucial to preserve other settings when updating delivery fees.
+         */
+        async function fetchSiteConfig() {
+            try {
+                const response = await fetch(`${BASE_URL}/site/site-config`);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const data = await response.json();
+                appState.siteConfig = data; // Store the full config
+                appState.deliveryFees = data.deliveryFees || [];
+                appState.primaryColor = data.primaryColor || '#C8797D'; // Update primary color
+                document.documentElement.style.setProperty('--primary-color', appState.primaryColor); // Set CSS variable
+                appState.isLoading = false;
+                appState.errorMessage = null;
+            } catch (e) {
+                appState.isLoading = false;
+                appState.errorMessage = `Error fetching site configuration: ${e.message}. Please try again.`;
+                console.error('Error fetching site config:', e);
+                showMessage(appState.errorMessage, 'error');
+            } finally {
+                renderContent(); // Always render to show loading, data, or error
+            }
+        }
+
+        /**
+         * Renders the content of the page based on the current appState.
+         */
+        function renderContent() {
+            contentArea.innerHTML = ''; // Clear previous content
+            saveButtonContainer.classList.add('hidden'); // Hide save button by default
+
+            if (appState.isLoading) {
+                contentArea.innerHTML = `
+                    <div class="flex flex-col items-center justify-center h-full">
+                        <div class="animate-spin rounded-full h-12 w-12 border-4 border-indigo-500 border-t-transparent"></div>
+                        <p class="mt-4 text-gray-600">Loading delivery fees...</p>
+                    </div>
+                `;
+            } else if (appState.errorMessage) {
+                contentArea.innerHTML = `
+                    <div class="text-center text-red-500 p-4">
+                        <i class="fas fa-exclamation-circle text-4xl mb-2"></i>
+                        <p class="text-lg">${appState.errorMessage}</p>
+                        <button id="retry-fetch-btn" class="mt-4 bg-blue-500 text-white px-4 py-2 rounded-lg shadow hover:bg-blue-600 transition duration-300">
+                            <i class="fas fa-sync-alt mr-2"></i> Retry
+                        </button>
+                    </div>
+                `;
+                document.getElementById('retry-fetch-btn').onclick = fetchSiteConfig; // Attach retry listener
+            } else if (appState.deliveryFees.length === 0) {
+                contentArea.innerHTML = `
+                    <div class="bg-gray-100 p-8 rounded-xl shadow-inner text-center">
+                        <i class="fas fa-info-circle text-4xl text-gray-500 mb-3"></i>
+                        <p class="text-lg text-gray-700">No delivery fees configured.</p>
+                    </div>
+                `;
+            } else {
+                // Sort fees by wilayaId for consistent display
+                appState.deliveryFees.sort((a, b) => (a.wilayaId || 0) - (b.wilayaId || 0));
+
+                const formHtml = appState.deliveryFees.map((fee, index) => `
+                    <div class="card bg-white p-4 rounded-lg shadow-md mb-4 flex items-center justify-between">
+                        <div class="flex-1">
+                            <p class="text-lg font-semibold text-gray-800">${fee.wilayaName || 'Unknown Wilaya'}</p>
+                        </div>
+                        <div class="w-32 ml-4">
+                            <input type="number" step="0.01"
+                                   class="input-field w-full p-2 border border-gray-300 rounded-md text-gray-800"
+                                   value="${(fee.price || 0).toFixed(2)}"
+                                   data-wilaya-id="${fee.wilayaId}"
+                                   data-wilaya-name="${fee.wilayaName}"
+                                   id="price-input-${index}"
+                                   aria-label="Price for ${fee.wilayaName}">
+                            <span class="text-sm text-gray-500 block text-right mt-1">DA</span>
+                        </div>
+                    </div>
+                `).join('');
+
+                contentArea.innerHTML = `<form id="delivery-fees-form" class="w-full">${formHtml}</form>`;
+                saveButtonContainer.classList.remove('hidden'); // Show save button
+            }
+        }
+
+        /**
+         * Handles the update of delivery fees.
+         * Fetches the current full site config, updates only delivery fees, then sends PUT request.
+         */
+        async function updateDeliveryFees() {
+            // Basic validation: ensure all inputs are valid numbers
+            const priceInputs = contentArea.querySelectorAll('input[type="number"]');
+            let allValid = true;
+            const updatedFees = [];
+
+            priceInputs.forEach(input => {
+                const price = parseFloat(input.value);
+                if (isNaN(price) || price < 0) {
+                    input.classList.add('border-red-500', 'ring-red-500'); // Highlight invalid input
+                    allValid = false;
+                } else {
+                    input.classList.remove('border-red-500', 'ring-red-500');
+                    updatedFees.push({
+                        wilayaId: parseInt(input.dataset.wilayaId),
+                        wilayaName: input.dataset.wilayaName,
+                        price: price
+                    });
+                }
+            });
+
+            if (!allValid) {
+                showMessage('Please enter valid numbers for all prices.', 'error');
+                return;
+            }
+
+            // Ensure we have the full site config before updating
+            if (!appState.siteConfig) {
+                showMessage('Site configuration not loaded. Please refresh and try again.', 'error');
+                await fetchSiteConfig(); // Attempt to re-fetch
+                if (!appState.siteConfig) return; // If still null, cannot proceed
+            }
+
+            // Create a copy of the site config and update only the deliveryFees
+            const payload = { ...appState.siteConfig };
+            payload.deliveryFees = updatedFees;
+
+            // Show loading state on button
+            saveDeliveryFeesBtn.innerHTML = '<i class="fas fa-spinner animate-spin mr-2"></i> Saving...';
+            saveDeliveryFeesBtn.disabled = true;
+
+            try {
+                const response = await fetch(`${BASE_URL}/site/site-config`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(payload),
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+                }
+
+                showMessage('Delivery fees updated successfully!', 'success');
+                // Re-fetch data to reflect any server-side changes or re-sort
+                await fetchSiteConfig();
+
+            } catch (e) {
+                console.error('Error updating delivery fees:', e);
+                showMessage(`Failed to update delivery fees: ${e.message}`, 'error');
+            } finally {
+                // Reset button state
+                saveDeliveryFeesBtn.innerHTML = '<i class="fas fa-save mr-2"></i> Save Delivery Fees';
+                saveDeliveryFeesBtn.disabled = false;
+            }
+        }
+
+        // Event Listeners
+        document.addEventListener('DOMContentLoaded', () => {
+            fetchSiteConfig(); // Initial data fetch when the page loads
+            saveDeliveryFeesBtn.addEventListener('click', updateDeliveryFees);
+        });
+    </script>
+</body>
+</html>

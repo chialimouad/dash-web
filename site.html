@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Site Settings</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts - Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Font Awesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
+        }
+        /* Custom styles for a cleaner look */
+        .form-section {
+            background-color: white;
+            padding: 1.5rem;
+            border-radius: 0.75rem;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            margin-bottom: 2rem;
+        }
+        .form-section-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #111827;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid #e5e7eb;
+            margin-bottom: 1.5rem;
+        }
+        .form-input {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #d1d5db;
+            border-radius: 0.5rem;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        .form-input:focus {
+            outline: none;
+            border-color: #4f46e5;
+            box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.3);
+        }
+        .color-input-wrapper {
+            position: relative;
+        }
+        .color-preview {
+            position: absolute;
+            left: 0.75rem;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 24px;
+            height: 24px;
+            border-radius: 0.25rem;
+            border: 1px solid #d1d5db;
+            cursor: pointer;
+        }
+        .color-input {
+            padding-left: 3rem; /* Space for color preview */
+        }
+        /* Simple toast notification */
+        #toast {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 1rem 2rem;
+            border-radius: 0.5rem;
+            color: white;
+            font-weight: 500;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s, visibility 0.3s;
+            z-index: 100;
+        }
+        #toast.show {
+            opacity: 1;
+            visibility: visible;
+        }
+    </style>
+</head>
+<body class="bg-gray-100">
+
+    <header id="main-header" class="bg-gray-800 text-white shadow-md transition-colors duration-300">
+        <div class="container mx-auto p-4">
+            <h1 class="text-2xl font-bold">Site Settings</h1>
+        </div>
+    </header>
+
+    <main class="container mx-auto p-4 md:p-8">
+        <form id="site-settings-form" novalidate>
+            <!-- General Site Info -->
+            <section class="form-section">
+                <h2 class="form-section-title">General Site Info</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label for="siteName" class="block text-sm font-medium text-gray-700 mb-1">Site Name</label>
+                        <input type="text" id="siteName" class="form-input" placeholder="Enter site name" required>
+                    </div>
+                    <div>
+                        <label for="slogan" class="block text-sm font-medium text-gray-700 mb-1">Slogan</label>
+                        <input type="text" id="slogan" class="form-input" placeholder="Enter slogan" required>
+                    </div>
+                </div>
+            </section>
+
+            <!-- UI Design Theme -->
+            <section class="form-section">
+                <h2 class="form-section-title">UI Design Theme</h2>
+                <div>
+                    <label for="currentDataIndex" class="block text-sm font-medium text-gray-700 mb-1">Select UI Design</label>
+                    <select id="currentDataIndex" class="form-input" required></select>
+                </div>
+            </section>
+
+            <!-- Brand & Footer Colors -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <section class="form-section">
+                    <h2 class="form-section-title">Brand Colors (Hex Codes)</h2>
+                    <div class="space-y-4">
+                        <div id="primaryColor-wrapper"></div>
+                        <div id="secondaryColor-wrapper"></div>
+                        <div id="tertiaryColor-wrapper"></div>
+                        <div id="generalTextColor-wrapper"></div>
+                    </div>
+                </section>
+                <section class="form-section">
+                    <h2 class="form-section-title">Footer Colors (Hex Codes)</h2>
+                    <div class="space-y-4">
+                        <div id="footerBgColor-wrapper"></div>
+                        <div id="footerTextColor-wrapper"></div>
+                        <div id="footerLinkColor-wrapper"></div>
+                    </div>
+                </section>
+            </div>
+
+            <!-- About Us Content -->
+            <section class="form-section">
+                <h2 class="form-section-title">About Us Content</h2>
+                <div class="space-y-4">
+                    <div>
+                        <label for="aboutUsText" class="block text-sm font-medium text-gray-700 mb-1">About Us Text</label>
+                        <textarea id="aboutUsText" rows="5" class="form-input" placeholder="Enter about us content" required></textarea>
+                    </div>
+                    <div>
+                        <label for="aboutUsImageUrl" class="block text-sm font-medium text-gray-700 mb-1">About Us Image URL</label>
+                        <input type="url" id="aboutUsImageUrl" class="form-input" placeholder="Enter full URL for About Us image" required>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Social Media Links -->
+            <section class="form-section">
+                <h2 class="form-section-title">Social Media Links</h2>
+                <div id="social-media-links-container" class="space-y-6">
+                    <!-- Social media fields will be injected here -->
+                </div>
+                <div class="mt-6 text-center">
+                    <button type="button" id="add-social-link-btn" class="bg-indigo-600 text-white font-semibold px-4 py-2 rounded-lg shadow hover:bg-indigo-700 transition">
+                        <i class="fas fa-plus mr-2"></i>Add Social Media Link
+                    </button>
+                </div>
+            </section>
+
+            <!-- Save Button -->
+            <div class="mt-8 text-center">
+                <button type="submit" id="save-settings-btn" class="bg-green-600 text-white font-bold text-lg px-8 py-3 rounded-xl shadow-lg hover:bg-green-700 transition transform hover:scale-105">
+                    Save Settings
+                </button>
+            </div>
+        </form>
+    </main>
+
+    <!-- Toast Notification -->
+    <div id="toast"></div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- Configuration and State ---
+            const BASE_URL = 'https://sheeka.onrender.com';
+            const designNames = [
+                'Default Sheeka Pink', 'Ocean Breeze', 'Forest Earth', 'Modern Monochrome',
+                'Royal Purple & Gold', 'Warm Sunset', 'Midnight Elegance', 'Avant-Garde Chic',
+                'Opulent Renaissance', 'Modern Green & Black'
+            ];
+            
+            const form = document.getElementById('site-settings-form');
+            const header = document.getElementById('main-header');
+
+            // --- Helper Functions ---
+
+            /**
+             * Validates if a string is a valid hex color code.
+             * @param {string} hex - The string to validate.
+             * @returns {boolean}
+             */
+            const isValidHex = (hex) => /^#[0-9A-F]{6}$/i.test(hex);
+
+            /**
+             * Shows a toast notification.
+             * @param {string} message - The message to display.
+             * @param {boolean} isError - If true, shows an error-styled toast.
+             */
+            const showToast = (message, isError = false) => {
+                const toast = document.getElementById('toast');
+                toast.textContent = message;
+                toast.style.backgroundColor = isError ? '#dc2626' : '#16a34a'; // red-600 or green-600
+                toast.classList.add('show');
+                setTimeout(() => toast.classList.remove('show'), 3000);
+            };
+
+            /**
+             * Creates and injects a color input field into the DOM.
+             * @param {string} id - The ID for the input element.
+             * @param {string} label - The label text.
+             * @param {string} containerId - The ID of the container to append to.
+             */
+            const createColorInput = (id, label, containerId) => {
+                const container = document.getElementById(containerId);
+                container.innerHTML = `
+                    <label for="${id}" class="block text-sm font-medium text-gray-700 mb-1">${label}</label>
+                    <div class="color-input-wrapper">
+                        <input type="color" id="${id}-picker" class="color-preview" value="#000000">
+                        <input type="text" id="${id}" class="form-input color-input" placeholder="e.g., #RRGGBB" required pattern="^#[0-9A-F]{6}$">
+                    </div>
+                `;
+                const textInput = document.getElementById(id);
+                const colorPicker = document.getElementById(`${id}-picker`);
+
+                // Sync text input to color picker
+                textInput.addEventListener('input', () => {
+                    if (isValidHex(textInput.value)) {
+                        colorPicker.value = textInput.value;
+                        if (id === 'primaryColor') {
+                           header.style.backgroundColor = textInput.value;
+                        }
+                    }
+                });
+
+                // Sync color picker to text input
+                colorPicker.addEventListener('input', () => {
+                    textInput.value = colorPicker.value.toUpperCase();
+                    textInput.dispatchEvent(new Event('input')); // Trigger input event to update header
+                });
+            };
+
+            /**
+             * Creates and injects a social media link field group.
+             * @param {object} [link={}] - Optional link object with platform, url, iconClass.
+             */
+            const createSocialMediaField = (link = {}) => {
+                const container = document.getElementById('social-media-links-container');
+                const index = container.children.length;
+                const div = document.createElement('div');
+                div.className = 'p-4 border border-gray-200 rounded-lg bg-gray-50 space-y-4 relative';
+                div.innerHTML = `
+                    <button type="button" class="remove-social-btn absolute top-2 right-2 text-red-500 hover:text-red-700">&times;</button>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Platform</label>
+                            <input type="text" class="form-input social-platform" placeholder="e.g., Facebook" value="${link.platform || ''}">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Icon Class (Font Awesome)</label>
+                            <input type="text" class="form-input social-icon" placeholder="e.g., fab fa-facebook-f" value="${link.iconClass || ''}">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">URL</label>
+                        <input type="url" class="form-input social-url" placeholder="Enter full URL" value="${link.url || ''}">
+                    </div>
+                `;
+                container.appendChild(div);
+                div.querySelector('.remove-social-btn').addEventListener('click', () => div.remove());
+            };
+
+            /**
+             * Populates the entire form with data from the config object.
+             * @param {object} config - The site configuration object.
+             */
+            const populateForm = (config) => {
+                document.getElementById('siteName').value = config.siteName;
+                document.getElementById('slogan').value = config.slogan;
+                document.getElementById('aboutUsText').value = config.aboutUsText;
+                document.getElementById('aboutUsImageUrl').value = config.aboutUsImageUrl;
+                
+                // Populate dropdown and set selected value
+                const designDropdown = document.getElementById('currentDataIndex');
+                designNames.forEach((name, index) => {
+                    const option = document.createElement('option');
+                    option.value = index;
+                    option.textContent = `Design ${index}: ${name}`;
+                    designDropdown.appendChild(option);
+                });
+                designDropdown.value = config.currentDataIndex;
+
+                // Populate color fields
+                const colorFields = [
+                    'primaryColor', 'secondaryColor', 'tertiaryColor', 'generalTextColor',
+                    'footerBgColor', 'footerTextColor', 'footerLinkColor'
+                ];
+                colorFields.forEach(id => {
+                    const value = config[id];
+                    if (value && isValidHex(value)) {
+                        document.getElementById(id).value = value;
+                        document.getElementById(`${id}-picker`).value = value;
+                    }
+                });
+                header.style.backgroundColor = config.primaryColor;
+
+                // Populate social media links
+                document.getElementById('social-media-links-container').innerHTML = '';
+                config.socialMediaLinks.forEach(createSocialMediaField);
+            };
+
+            // --- API Communication ---
+
+            /**
+             * Fetches site configuration from the backend.
+             */
+            const fetchSiteConfig = async () => {
+                try {
+                    const response = await fetch(`${BASE_URL}/api/site-config`);
+                    if (!response.ok) {
+                        throw new Error(`Failed to load config: ${response.statusText}`);
+                    }
+                    const config = await response.json();
+                    populateForm(config);
+                } catch (error) {
+                    console.error('Error fetching site config:', error);
+                    showToast('Could not load site configuration.', true);
+                }
+            };
+
+            /**
+             * Updates the site configuration on the backend.
+             */
+            const updateSiteConfig = async () => {
+                const socialLinks = [];
+                document.querySelectorAll('#social-media-links-container > div').forEach(div => {
+                    const platform = div.querySelector('.social-platform').value.trim();
+                    const url = div.querySelector('.social-url').value.trim();
+                    const iconClass = div.querySelector('.social-icon').value.trim();
+                    if (platform && url) {
+                        socialLinks.push({ platform, url, iconClass });
+                    }
+                });
+
+                const updatedConfig = {
+                    siteName: document.getElementById('siteName').value,
+                    slogan: document.getElementById('slogan').value,
+                    primaryColor: document.getElementById('primaryColor').value,
+                    secondaryColor: document.getElementById('secondaryColor').value,
+                    tertiaryColor: document.getElementById('tertiaryColor').value,
+                    generalTextColor: document.getElementById('generalTextColor').value,
+                    footerBgColor: document.getElementById('footerBgColor').value,
+                    footerTextColor: document.getElementById('footerTextColor').value,
+                    footerLinkColor: document.getElementById('footerLinkColor').value,
+                    aboutUsText: document.getElementById('aboutUsText').value,
+                    aboutUsImageUrl: document.getElementById('aboutUsImageUrl').value,
+                    socialMediaLinks: socialLinks,
+                    currentDataIndex: parseInt(document.getElementById('currentDataIndex').value, 10),
+                };
+
+                try {
+                    const response = await fetch(`${BASE_URL}/api/site-config`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(updatedConfig),
+                    });
+
+                    if (response.ok) {
+                        showToast('Site configuration updated successfully!');
+                    } else {
+                        const errorData = await response.json();
+                        throw new Error(errorData.message || 'Failed to update configuration.');
+                    }
+                } catch (error) {
+                    console.error('Error updating site config:', error);
+                    showToast(`Error: ${error.message}`, true);
+                }
+            };
+
+            // --- Initialization and Event Listeners ---
+
+            // Create color inputs dynamically
+            createColorInput('primaryColor', 'Primary Color', 'primaryColor-wrapper');
+            createColorInput('secondaryColor', 'Secondary Color', 'secondaryColor-wrapper');
+            createColorInput('tertiaryColor', 'Tertiary Color', 'tertiaryColor-wrapper');
+            createColorInput('generalTextColor', 'General Text Color', 'generalTextColor-wrapper');
+            createColorInput('footerBgColor', 'Footer Background Color', 'footerBgColor-wrapper');
+            createColorInput('footerTextColor', 'Footer Text Color', 'footerTextColor-wrapper');
+            createColorInput('footerLinkColor', 'Footer Link Color', 'footerLinkColor-wrapper');
+
+            // Add social media link button
+            document.getElementById('add-social-link-btn').addEventListener('click', () => createSocialMediaField());
+
+            // Form submission
+            form.addEventListener('submit', (e) => {
+                e.preventDefault();
+                if (form.checkValidity()) {
+                    updateSiteConfig();
+                } else {
+                    showToast('Please fill out all required fields correctly.', true);
+                    form.reportValidity();
+                }
+            });
+
+            // Initial data fetch
+            fetchSiteConfig();
+        });
+    </script>
+</body>
+</html>

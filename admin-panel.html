@@ -32,9 +32,10 @@
         ::-webkit-scrollbar-thumb:hover {
             background: #555;
         }
-        /* Hide the default date picker icon for custom styling */
+        /* Remove default date picker icon and add custom one */
         input[type="date"]::-webkit-calendar-picker-indicator {
             display: none;
+            -webkit-appearance: none;
         }
         input[type="date"] {
             -webkit-appearance: none;
@@ -98,9 +99,15 @@
             .sidebar-overlay {
                 display: none; /* Hide overlay on desktop */
             }
+            /* Removed md:ml-[250px] to eliminate space */
             .main-content-wrapper {
-                margin-left: 0; /* No margin needed as sidebar is static */
+                margin-left: 0; /* Ensure no margin is applied on desktop */
             }
+        }
+
+        /* Prevents body scrolling when sidebar is open on mobile */
+        body.no-scroll {
+            overflow: hidden;
         }
 
         .sidebar-button {
@@ -122,6 +129,29 @@
         .sidebar-button.active {
             background-color: #4f46e5; /* Indigo-600 for active state */
             color: white;
+        }
+
+        /* Enhanced dashboard card styling */
+        .dashboard-card {
+            transition: transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out; /* Smoother transition */
+            border: 1px solid #e5e7eb; /* subtle border */
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08); /* Slightly more pronounced initial shadow */
+        }
+        .dashboard-card:hover {
+            transform: translateY(-8px); /* More noticeable lift */
+            box-shadow: 0 15px 30px rgba(0,0,0,0.2); /* Deeper shadow on hover */
+        }
+
+        /* Filter buttons hover effect */
+        .filter-button {
+            transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out, background-color 0.2s ease-in-out;
+        }
+        .filter-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        .filter-button.active {
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
     </style>
 </head>
@@ -155,10 +185,25 @@
                 <i class="fas fa-boxes mr-3"></i>
                 <span>All Products</span>
             </button>
+            <!-- NEW BUTTON: Admins -->
+            <button id="admins-nav-btn" class="sidebar-button">
+                <i class="fas fa-user-shield mr-3"></i>
+                <span>Admins</span>
+            </button>
             <!-- NEW BUTTON: Stock -->
             <button id="stock-nav-btn" class="sidebar-button">
                 <i class="fas fa-warehouse mr-3"></i> <!-- Icon for stock/warehouse -->
                 <span>Stock</span>
+            </button>
+            <!-- NEW BUTTON: Pixels -->
+            <button id="pixels-nav-btn" class="sidebar-button">
+                <i class="fas fa-image mr-3"></i> <!-- Icon for pixels/images -->
+                <span>Pixels</span>
+            </button>
+            <!-- NEW BUTTON: Fees Delivery -->
+            <button id="fees-delivery-nav-btn" class="sidebar-button">
+                <i class="fas fa-dollar-sign mr-3"></i> <!-- Icon for fees/delivery -->
+                <span>Fees Delivery</span>
             </button>
             <!-- Other sidebar items can go here -->
         </nav>
@@ -171,7 +216,7 @@
     </aside>
 
     <!-- Main Content Area -->
-    <div class="flex-1 flex flex-col md:ml-[250px] transition-all duration-300 ease-in-out"> <!-- Added margin for desktop sidebar -->
+    <div class="flex-1 flex flex-col main-content-wrapper transition-all duration-300 ease-in-out">
         <!-- App Bar -->
         <header class="bg-white shadow-sm p-4 flex justify-between md:justify-end items-center rounded-b-lg">
             <!-- Hamburger menu for mobile -->
@@ -224,7 +269,7 @@
             <hr class="border-gray-300 mb-6">
 
             <!-- Main Content Grid -->
-            <section id="dashboard-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 flex-1">
+            <section id="dashboard-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-6 flex-1">
                 <!-- Order Summary Card -->
                 <div id="order-summary-card" class="dashboard-card bg-white p-6 rounded-xl shadow-lg flex flex-col">
                     <div class="flex items-center mb-4">
@@ -247,21 +292,6 @@
                     </div>
                 </div>
 
-                <!-- Admins Card -->
-                <div id="admins-card" class="dashboard-card bg-white p-6 rounded-xl shadow-lg flex flex-col">
-                    <div class="flex items-center mb-4">
-                        <i class="fas fa-user-shield text-3xl text-gray-800"></i>
-                        <h3 class="text-2xl font-bold text-gray-800 ml-3">Admins</h3>
-                    </div>
-                    <div class="mb-4">
-                        <input type="text" id="admin-search" placeholder="Search..." class="w-full p-3 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 bg-gray-50 text-gray-800">
-                    </div>
-                    <hr class="border-gray-300 mb-4">
-                    <div id="admins-content" class="flex-1 overflow-y-auto">
-                        <!-- Content will be loaded here -->
-                    </div>
-                </div>
-
                 <!-- Stock Info Card -->
                 <div id="stock-info-card" class="dashboard-card bg-white p-6 rounded-xl shadow-lg flex flex-col">
                     <div class="flex items-center mb-4">
@@ -272,7 +302,7 @@
                         <input type="text" id="stock-search" placeholder="Search..." class="w-full p-3 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 bg-gray-50 text-gray-800">
                     </div>
                     <hr class="border-gray-300 mb-4">
-                    <div id="stock-info-content" class="flex-1 flex items-center justify-center text-gray-800 text-lg">
+                    <div id="stock-info-content" class="flex-1 overflow-y-auto">
                         Stock Information Placeholder
                     </div>
                 </div>
@@ -284,8 +314,7 @@
         // Global state management
         const appState = {
             products: [],
-            admins: [],
-            stockInfos: [],
+            stockInfos: [], // Placeholder for stock data
             totalOrders: 0,
             pendingOrders: 0,
             confirmedOrders: 0,
@@ -297,7 +326,6 @@
             customStartDate: null,
             customEndDate: null,
             isEnglish: true, // Default language
-            adminFilter: '',
             stockFilter: '',
             orderPieChartInstance: null, // To store Chart.js instance
             activeSidebarButton: 'dashboard-nav-btn', // Keep track of the active button
@@ -317,7 +345,10 @@
                 'dashboardButton': 'Dashboard',
                 'addProductButton': 'Add Product',
                 'allProductsButton': 'All Products',
-                'stockButton': 'Stock', // NEW TRANSLATION
+                'adminsButton': 'Admins',
+                'stockButton': 'Stock',
+                'pixelsButton': 'Pixels',
+                'feesDeliveryButton': 'Fees Delivery', // New translation
                 'selected': 'Selected',
                 'orderSummary': 'Order Summary',
                 'totalOrders': 'Total Orders',
@@ -326,7 +357,6 @@
                 'tentative': 'Tentative',
                 'cancelled': 'Cancelled',
                 'orderDistribution': 'Order Distribution',
-                'admins': 'Admins',
                 'stockInfo': 'Stock Info',
                 'searchHint': 'Search...',
                 'noDataChart': 'No data available to show the chart.',
@@ -339,6 +369,8 @@
                 'language': 'English',
                 'From': 'From',
                 'To': 'To',
+                'noStockFound': 'No stock items found matching your search.',
+                'loadingStock': 'Loading stock info...'
             },
             'ar': {
                 'adminPanelTitle': 'لوحة التحكم',
@@ -351,7 +383,10 @@
                 'dashboardButton': 'لوحة القيادة',
                 'addProductButton': 'إضافة منتج',
                 'allProductsButton': 'جميع المنتجات',
-                'stockButton': 'المخزون', // NEW TRANSLATION
+                'adminsButton': 'المسؤولون',
+                'stockButton': 'المخزون',
+                'pixelsButton': 'البكسلات',
+                'feesDeliveryButton': 'رسوم التوصيل', // New translation
                 'selected': 'المحدد',
                 'orderSummary': 'ملخص الطلبات',
                 'totalOrders': 'إجمالي الطلبات',
@@ -360,7 +395,6 @@
                 'tentative': 'مؤقتة',
                 'cancelled': 'ملغاة',
                 'orderDistribution': 'توزيع الطلبات',
-                'admins': 'المسؤولون',
                 'stockInfo': 'معلومات المخزون',
                 'searchHint': 'بحث...',
                 'noDataChart': 'لا توجد بيانات لعرض الرسم البياني.',
@@ -373,6 +407,8 @@
                 'language': 'العربية',
                 'From': 'من',
                 'To': 'إلى',
+                'noStockFound': 'لم يتم العثور على عناصر مخزون مطابقة لبحثك.',
+                'loadingStock': 'جاري تحميل معلومات المخزون...'
             },
         };
 
@@ -401,9 +437,11 @@
             if (appState.isSidebarOpen) {
                 sidebar.classList.add('open');
                 sidebarOverlay.classList.add('show');
+                document.body.classList.add('no-scroll'); // Add no-scroll class to body
             } else {
                 sidebar.classList.remove('open');
                 sidebarOverlay.classList.remove('show');
+                document.body.classList.remove('no-scroll'); // Remove no-scroll class from body
             }
         }
 
@@ -412,29 +450,10 @@
             appState.isEnglish = !appState.isEnglish;
             renderApp(); // Re-render the entire app
             fetchOrders(); // Re-fetch orders to apply date formatting if needed
+            fetchStockInfo(); // Re-fetch stock info
         }
 
         // --- API Fetching Functions ---
-
-        async function fetchAdmins() {
-            try {
-                const response = await fetch('https://sheeka.onrender.com/auth/users');
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                appState.admins = await response.json();
-                renderAdminsCard(); // Re-render admins card after fetching
-            } catch (e) {
-                console.error('Error fetching admins:', e);
-                // Optionally display an error message in the admins card
-                document.getElementById('admins-content').innerHTML = `
-                    <div class="text-center text-red-500 p-4">
-                        <i class="fas fa-exclamation-circle text-4xl mb-2"></i>
-                        <p>Failed to load admins. Please try again.</p>
-                    </div>
-                `;
-            }
-        }
 
         async function fetchOrders() {
             appState.isOrdersLoading = true;
@@ -457,6 +476,35 @@
             } finally {
                 renderOrderSummaryCard(); // Update with data or error
                 renderOrderPieChartCard(); // Update with data or error
+            }
+        }
+
+        async function fetchStockInfo() {
+            const contentDiv = document.getElementById('stock-info-content');
+            contentDiv.innerHTML = `
+                <div class="flex flex-col items-center justify-center h-full text-gray-600">
+                    <div class="animate-spin rounded-full h-12 w-12 border-4 border-indigo-500 border-t-transparent"></div>
+                    <p class="mt-4">${getTranslatedString('loadingStock')}</p>
+                </div>
+            `;
+            try {
+                // Placeholder for actual stock API call
+                // For now, simulate a delay and some dummy data
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                appState.stockInfos = [
+                    { name: 'Product A', quantity: 150, lastUpdated: '2025-07-01' },
+                    { name: 'Product B', quantity: 75, lastUpdated: '2025-07-05' },
+                    { name: 'Product C', quantity: 200, lastUpdated: '2025-06-28' },
+                ];
+                renderStockInfoCard();
+            } catch (e) {
+                console.error('Error fetching stock info:', e);
+                contentDiv.innerHTML = `
+                    <div class="text-center text-red-500 p-4">
+                        <i class="fas fa-exclamation-circle text-4xl mb-2"></i>
+                        <p>${getTranslatedString('failedToLoadOrders')} ${e.message}</p>
+                    </div>
+                `;
             }
         }
 
@@ -505,6 +553,7 @@
                         break;
                     case 'custom':
                         if (appState.customStartDate && appState.customEndDate) {
+                            // Ensure custom dates are also treated as UTC start/end of day for comparison
                             const customStartUtc = new Date(Date.UTC(appState.customStartDate.getFullYear(), appState.customStartDate.getMonth(), appState.customStartDate.getDate()));
                             const customEndUtc = new Date(Date.UTC(appState.customEndDate.getFullYear(), appState.customEndDate.getMonth(), appState.customEndDate.getDate(), 23, 59, 59, 999));
 
@@ -555,15 +604,16 @@
             document.getElementById('dashboard-nav-btn').querySelector('span').textContent = getTranslatedString('dashboardButton');
             document.getElementById('add-product-nav-btn').querySelector('span').textContent = getTranslatedString('addProductButton');
             document.getElementById('all-products-nav-btn').querySelector('span').textContent = getTranslatedString('allProductsButton');
-            document.getElementById('stock-nav-btn').querySelector('span').textContent = getTranslatedString('stockButton'); // TRANSLATE NEW BUTTON
-
+            document.getElementById('admins-nav-btn').querySelector('span').textContent = getTranslatedString('adminsButton');
+            document.getElementById('stock-nav-btn').querySelector('span').textContent = getTranslatedString('stockButton');
+            document.getElementById('pixels-nav-btn').querySelector('span').textContent = getTranslatedString('pixelsButton');
+            document.getElementById('fees-delivery-nav-btn').querySelector('span').textContent = getTranslatedString('feesDeliveryButton'); // Translate new button
 
             // Update filter button labels
             document.querySelector('#filter-today .filter-label').textContent = getTranslatedString('today');
             document.querySelector('#filter-month .filter-label').textContent = getTranslatedString('thisMonth');
             document.querySelector('#filter-custom .filter-label').textContent = getTranslatedString('customRange');
             document.querySelector('#filter-all .filter-label').textContent = getTranslatedString('allOrders');
-
 
             // Update custom date range labels
             document.querySelector('#custom-date-range label[for="start-date"]').textContent = getTranslatedString('From') + ':';
@@ -572,14 +622,10 @@
             // Update card titles
             document.querySelector('#order-summary-card h3').textContent = getTranslatedString('orderSummary');
             document.querySelector('#order-distribution-card h3').textContent = getTranslatedString('orderDistribution');
-            document.querySelector('#admins-card h3').textContent = getTranslatedString('admins');
             document.querySelector('#stock-info-card h3').textContent = getTranslatedString('stockInfo');
 
             // Update search hints
-            document.getElementById('admin-search').placeholder = getTranslatedString('searchHint');
             document.getElementById('stock-search').placeholder = getTranslatedString('searchHint');
-
-            document.getElementById('stock-info-content').textContent = getTranslatedString('stockInformation');
 
             // Apply active state to the currently selected sidebar button
             updateSidebarActiveState(appState.activeSidebarButton);
@@ -588,7 +634,7 @@
             updateFilterButtons();
             renderOrderSummaryCard();
             renderOrderPieChartCard();
-            renderAdminsCard();
+            renderStockInfoCard(); // Call to render stock info
             updateCustomDateRangeDisplay();
         }
 
@@ -674,7 +720,7 @@
 
         function renderOrderPieChartCard() {
             const contentDiv = document.getElementById('order-distribution-content');
-            const canvas = document.getElementById('orderPieChart');
+            let canvas = document.getElementById('orderPieChart');
 
             if (appState.isOrdersLoading) {
                 contentDiv.innerHTML = `
@@ -726,11 +772,12 @@
                 return;
             }
 
-            // Ensure canvas is visible if it was hidden by an error/empty message
-            if (contentDiv.querySelector('canvas') === null) {
+            // Ensure canvas is present and get its context
+            if (!canvas || !document.body.contains(canvas)) { // Check if canvas exists and is in DOM
                 contentDiv.innerHTML = '<canvas id="orderPieChart"></canvas>';
+                canvas = document.getElementById('orderPieChart');
             }
-            const ctx = document.getElementById('orderPieChart').getContext('2d');
+            const ctx = canvas.getContext('2d');
 
             const labels = Object.keys(dataMap);
             const data = Object.values(dataMap);
@@ -811,46 +858,54 @@
             }
         }
 
-        function renderAdminsCard() {
-            const contentDiv = document.getElementById('admins-content');
-            const filteredAdmins = appState.admins.filter(admin => {
-                const name = admin.name ? admin.name.toLowerCase() : '';
-                const role = admin.role ? admin.role.toLowerCase() : '';
-                const filter = appState.adminFilter.toLowerCase();
-                return name.includes(filter) || role.includes(filter);
+        function renderStockInfoCard() {
+            const contentDiv = document.getElementById('stock-info-content');
+            const filteredStock = appState.stockInfos.filter(item => {
+                const name = item.name ? item.name.toLowerCase() : '';
+                const filter = appState.stockFilter.toLowerCase();
+                return name.includes(filter);
             });
 
-            if (appState.admins.length === 0) {
+            if (appState.stockInfos.length === 0 && appState.stockFilter === '') {
                 contentDiv.innerHTML = `
                     <div class="flex flex-col items-center justify-center h-full text-gray-600">
                         <div class="animate-spin rounded-full h-12 w-12 border-4 border-indigo-500 border-t-transparent"></div>
-                        <p class="mt-4">Loading admins...</p>
+                        <p class="mt-4">${getTranslatedString('loadingStock')}</p>
                     </div>
                 `;
                 return;
             }
 
-            contentDiv.innerHTML = filteredAdmins.map(admin => `
-                <div class="bg-white p-3 rounded-lg shadow-sm mb-3 flex items-center">
-                    <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center mr-3">
-                        <i class="fas fa-user text-blue-600"></i>
-                    </div>
-                    <div>
-                        <h4 class="font-semibold text-gray-900">${admin.name || getTranslatedString('unknown')}</h4>
-                        <p class="text-sm text-gray-600">${getTranslatedString('role')}: ${admin.role || getTranslatedString('unknown')}</p>
-                    </div>
-                </div>
-            `).join('');
-
-            if (filteredAdmins.length === 0 && appState.adminFilter !== '') {
+            if (filteredStock.length === 0 && appState.stockFilter !== '') {
                 contentDiv.innerHTML = `
                     <div class="flex flex-col items-center justify-center h-full text-gray-600">
                         <i class="fas fa-info-circle text-4xl mb-3"></i>
-                        <p>No admins found matching your search.</p>
+                        <p>${getTranslatedString('noStockFound')}</p>
                     </div>
                 `;
+                return;
+            }
+
+            if (filteredStock.length > 0) {
+                contentDiv.innerHTML = `
+                    <div class="w-full text-left">
+                        ${filteredStock.map(item => `
+                            <div class="bg-white p-3 rounded-lg shadow-sm mb-3 flex items-center justify-between">
+                                <div>
+                                    <h4 class="font-semibold text-gray-900">${item.name}</h4>
+                                    <p class="text-sm text-gray-600">Quantity: ${item.quantity}</p>
+                                    <p class="text-xs text-gray-500">Last Updated: ${item.lastUpdated}</p>
+                                </div>
+                                <i class="fas fa-cubes text-blue-500 text-2xl"></i>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+            } else {
+                contentDiv.innerHTML = `<p class="text-center text-gray-800 text-lg">${getTranslatedString('stockInformation')}</p>`;
             }
         }
+
 
         function updateCustomDateRangeDisplay() {
             const selectedDateRangeText = document.getElementById('selected-date-range');
@@ -869,8 +924,8 @@
         document.addEventListener('DOMContentLoaded', () => {
             // Initial render and data fetch
             renderApp();
-            fetchAdmins();
             fetchOrders();
+            fetchStockInfo(); // Fetch stock info on load
 
             // Sidebar toggle buttons
             document.getElementById('open-sidebar-btn').addEventListener('click', toggleSidebar);
@@ -882,7 +937,7 @@
 
             // Orders Button
             document.getElementById('orders-button').addEventListener('click', () => {
-                window.location.href = 'order-management-app.html';
+                window.location.href = 'orders-management-web.html'; // Navigate to the separate orders page
                 updateSidebarActiveState('orders-button'); // Update active state
                 if (appState.isSidebarOpen) toggleSidebar(); // Close sidebar on navigation
             });
@@ -891,7 +946,9 @@
             document.getElementById('dashboard-nav-btn').addEventListener('click', () => {
                 updateSidebarActiveState('dashboard-nav-btn');
                 if (appState.isSidebarOpen) toggleSidebar(); // Close sidebar on navigation
-                // If this is a single-page app, you'd show/hide dashboard sections.
+                // For a multi-page app, this would typically refresh the current page or navigate to index.html if dashboard is main.
+                // Since this is admin-panel.html, and dashboard is its primary view, no explicit navigation is needed here,
+                // but the active state is updated.
             });
 
             // Add Product Navigation Button
@@ -907,11 +964,32 @@
                 updateSidebarActiveState('all-products-nav-btn'); // Update active state
                 if (appState.isSidebarOpen) toggleSidebar(); // Close sidebar on navigation
             });
+            
+            // Admins Navigation Button
+            document.getElementById('admins-nav-btn').addEventListener('click', () => {
+                window.location.href = 'admins.html'; // Navigate to admins.html
+                updateSidebarActiveState('admins-nav-btn'); // Update active state
+                if (appState.isSidebarOpen) toggleSidebar(); // Close sidebar on navigation
+            });
 
-            // NEW: Stock Navigation Button
+            // Stock Navigation Button
             document.getElementById('stock-nav-btn').addEventListener('click', () => {
                 window.location.href = 'stock.html'; // Navigate to stock.html
                 updateSidebarActiveState('stock-nav-btn'); // Update active state
+                if (appState.isSidebarOpen) toggleSidebar(); // Close sidebar on navigation
+            });
+
+            // Pixels Navigation Button
+            document.getElementById('pixels-nav-btn').addEventListener('click', () => {
+                window.location.href = 'pixels.html'; // Navigate to pixels.html
+                updateSidebarActiveState('pixels-nav-btn'); // Update active state
+                if (appState.isSidebarOpen) toggleSidebar(); // Close sidebar on navigation
+            });
+
+            // NEW: Fees Delivery Navigation Button
+            document.getElementById('fees-delivery-nav-btn').addEventListener('click', () => {
+                window.location.href = 'fees.html'; // Navigate to fees.html
+                updateSidebarActiveState('fees-delivery-nav-btn'); // Update active state
                 if (appState.isSidebarOpen) toggleSidebar(); // Close sidebar on navigation
             });
 
@@ -954,10 +1032,16 @@
             const endDateInput = document.getElementById('end-date');
 
             startDateInput.addEventListener('change', (e) => {
-                appState.customStartDate = new Date(e.target.value + 'T00:00:00Z'); // Ensure UTC start of day
+                // Parse as local date first to avoid timezone issues with date input
+                const localDate = new Date(e.target.value);
+                appState.customStartDate = new Date(Date.UTC(localDate.getFullYear(), localDate.getMonth(), localDate.getDate())); // Convert to UTC start of day
+                
                 if (appState.customEndDate && appState.customStartDate.getTime() > appState.customEndDate.getTime()) {
-                    appState.customEndDate = appState.customStartDate; // Adjust end date if it's before start date
-                    endDateInput.value = e.target.value;
+                    // Adjust end date if it's before start date
+                    appState.customEndDate = appState.customStartDate;
+                    // Format back to YYYY-MM-DD for input field
+                    const adjustedEndDate = new Date(appState.customEndDate.getTime());
+                    endDateInput.value = adjustedEndDate.toISOString().split('T')[0];
                 }
                 updateCustomDateRangeDisplay();
                 if (appState.customStartDate && appState.customEndDate) {
@@ -966,10 +1050,16 @@
             });
 
             endDateInput.addEventListener('change', (e) => {
-                appState.customEndDate = new Date(e.target.value + 'T23:59:59.999Z'); // Ensure UTC end of day
+                // Parse as local date first
+                const localDate = new Date(e.target.value);
+                appState.customEndDate = new Date(Date.UTC(localDate.getFullYear(), localDate.getMonth(), localDate.getDate(), 23, 59, 59, 999)); // Convert to UTC end of day
+                
                 if (appState.customStartDate && appState.customEndDate.getTime() < appState.customStartDate.getTime()) {
-                    appState.customStartDate = appState.customEndDate; // Adjust start date if it's after end date
-                    startDateInput.value = e.target.value;
+                    // Adjust start date if it's after end date
+                    appState.customStartDate = appState.customEndDate;
+                    // Format back to YYYY-MM-DD for input field
+                    const adjustedStartDate = new Date(appState.customStartDate.getTime());
+                    startDateInput.value = adjustedStartDate.toISOString().split('T')[0];
                 }
                 updateCustomDateRangeDisplay();
                 if (appState.customStartDate && appState.customEndDate) {
@@ -977,17 +1067,10 @@
                 }
             });
 
-            // Admin Search
-            document.getElementById('admin-search').addEventListener('input', (e) => {
-                appState.adminFilter = e.target.value;
-                renderAdminsCard();
-            });
-
-            // Stock Search (placeholder for now)
+            // Stock Search
             document.getElementById('stock-search').addEventListener('input', (e) => {
                 appState.stockFilter = e.target.value;
-                // No actual filtering for stock info yet, but this keeps the state in sync
-                // If stock info was a list, you'd call a renderStockInfoCard() here
+                renderStockInfoCard();
             });
         });
     </script>

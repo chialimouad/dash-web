@@ -1719,8 +1719,8 @@
          * @param {Object} order The order data.
          */
         function sendEmailWithEmailJS(order) {
-            const serviceID = 'service_va30odk'; // Replace with your EmailJS Service ID
-            const templateID = 'template_49nz2wu'; // Replace with your EmailJS Template ID
+            const serviceID = 'YOUR_SERVICE_ID'; // Replace with your EmailJS Service ID
+            const templateID = 'YOUR_TEMPLATE_ID'; // Replace with your EmailJS Template ID
 
             let productsSummary = '';
             if (order.products && Array.isArray(order.products) && order.products.length > 0) {
@@ -1956,10 +1956,10 @@
         }
         closeAgentReportModal.addEventListener('click', () => hideModal(agentReportModal));
 
-        // --- Initial Load and Event Listener ---
+        // --- Initial Load and Event Listeners ---
         document.addEventListener('DOMContentLoaded', () => {
             // Initialize EmailJS with your Public Key
-            emailjs.init('alok19p0pP9NFJsDL'); // <-- IMPORTANT: REPLACE WITH YOUR PUBLIC KEY
+            emailjs.init('YOUR_PUBLIC_KEY'); // <-- IMPORTANT: REPLACE WITH YOUR PUBLIC KEY
 
             // Simulate splash screen
             setTimeout(() => {

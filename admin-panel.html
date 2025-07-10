@@ -45,71 +45,45 @@
             padding-right: 40px; /* Space for the icon */
         }
 
-        /* Custom styles for the sidebar */
+        /* --- Modern Sidebar Styles --- */
         .sidebar {
-            width: 250px; /* Fixed width for the sidebar on larger screens */
-            background-color: #1f2937; /* Darker gray for sidebar background */
-            color: white;
-            padding: 1rem;
-            box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+            width: 250px;
+            flex-shrink: 0;
+            background-color: #111827; /* Tailwind gray-900 */
+            color: #d1d5db; /* Tailwind gray-300 */
+            height: 100vh;
             display: flex;
             flex-direction: column;
-            border-top-right-radius: 12px;
-            border-bottom-right-radius: 12px;
-            /* Mobile specific styles: hidden by default, full height, fixed position */
-            position: fixed;
-            top: 0;
-            left: 0;
-            height: 100vh;
-            z-index: 50; /* Above main content, below modal overlays */
-            transform: translateX(-100%); /* Start off-screen */
-            transition: transform 0.3s ease-in-out; /* Smooth transition */
+            padding: 1rem 0; /* Vertical padding only */
+            box-shadow: 2px 0 10px rgba(0,0,0,0.2);
         }
 
-        .sidebar.open {
-            transform: translateX(0); /* Slide in */
+        .sidebar-header {
+            padding: 1rem 1.5rem;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
         }
 
-        /* Overlay for mobile sidebar */
-        .sidebar-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.5);
-            z-index: 40; /* Below sidebar, above main content */
-            opacity: 0;
-            visibility: hidden;
-            transition: opacity 0.3s ease-in-out, visibility 0.3s ease-in-out;
+        .sidebar-header .logo-icon {
+            background-color: #4f46e5; /* Indigo-600 */
+            color: white;
+            padding: 0.5rem;
+            border-radius: 0.5rem;
+            margin-right: 0.75rem;
         }
 
-        .sidebar-overlay.show {
-            opacity: 1;
-            visibility: visible;
+        .sidebar-header h2 {
+            font-size: 1.25rem; /* text-xl */
+            font-weight: 700; /* bold */
+            color: white;
         }
 
-        /* Adjust main content for responsive layout */
-        @media (min-width: 768px) { /* md breakpoint */
-            .sidebar {
-                position: static; /* Reset to static for desktop layout */
-                transform: translateX(0); /* Always visible */
-                flex-shrink: 0; /* Prevent shrinking */
-            }
-            .sidebar-overlay {
-                display: none; /* Hide overlay on desktop */
-            }
-            /* Removed md:ml-[250px] to eliminate space */
-            .main-content-wrapper {
-                margin-left: 0; /* Ensure no margin is applied on desktop */
-            }
+        .sidebar nav {
+            flex-grow: 1;
+            padding: 0 1rem; /* Horizontal padding for nav items */
         }
-
-        /* Prevents body scrolling when sidebar is open on mobile */
-        body.no-scroll {
-            overflow: hidden;
-        }
-
+        
         .sidebar-button {
             display: flex;
             align-items: center;
@@ -117,29 +91,51 @@
             padding: 0.75rem 1rem;
             border-radius: 0.5rem;
             background-color: transparent;
-            color: white;
+            color: #d1d5db; /* gray-300 */
             font-weight: 500;
-            transition: background-color 0.3s ease, color 0.3s ease;
+            transition: background-color 0.2s ease, color 0.2s ease;
+            position: relative; /* For the active indicator */
         }
 
         .sidebar-button:hover {
-            background-color: #374151; /* Slightly lighter gray on hover */
+            background-color: #1f2937; /* gray-800 */
+            color: white;
         }
 
         .sidebar-button.active {
-            background-color: #4f46e5; /* Indigo-600 for active state */
+            background-color: #374151; /* gray-700 */
             color: white;
+            font-weight: 600; /* semi-bold */
+        }
+        
+        /* Active indicator bar */
+        .sidebar-button.active::before {
+            content: '';
+            position: absolute;
+            left: -1rem; /* Position outside the button's padding */
+            top: 20%;
+            height: 60%;
+            width: 4px;
+            background-color: #4f46e5; /* Indigo-600 */
+            border-top-right-radius: 4px;
+            border-bottom-right-radius: 4px;
+        }
+
+        .sidebar-footer {
+            padding: 1rem;
+            margin-top: auto;
+            border-top: 1px solid #374151; /* gray-700 */
         }
 
         /* Enhanced dashboard card styling */
         .dashboard-card {
-            transition: transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out; /* Smoother transition */
-            border: 1px solid #e5e7eb; /* subtle border */
-            box-shadow: 0 4px 12px rgba(0,0,0,0.08); /* Slightly more pronounced initial shadow */
+            transition: transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
+            border: 1px solid #e5e7eb;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
         }
         .dashboard-card:hover {
-            transform: translateY(-8px); /* More noticeable lift */
-            box-shadow: 0 15px 30px rgba(0,0,0,0.2); /* Deeper shadow on hover */
+            transform: translateY(-8px);
+            box-shadow: 0 15px 30px rgba(0,0,0,0.2);
         }
 
         /* Filter buttons hover effect */
@@ -156,79 +152,68 @@
     </style>
 </head>
 <body class="min-h-screen flex">
-    <!-- Sidebar Overlay for mobile -->
-    <div id="sidebar-overlay" class="sidebar-overlay md:hidden"></div>
-
     <!-- Sidebar -->
     <aside id="sidebar" class="sidebar">
-        <div class="p-4 mb-6 flex justify-between items-center">
-            <h2 class="text-2xl font-bold text-white">Admin Dashboard</h2>
-            <!-- Close button for mobile sidebar -->
-            <button id="close-sidebar-btn" class="md:hidden text-white text-2xl">
-                <i class="fas fa-times"></i>
-            </button>
+        <div class="sidebar-header">
+            <div class="logo-icon">
+                <i class="fas fa-shield-alt"></i>
+            </div>
+            <h2 class="text-xl font-bold text-white">Admin</h2>
         </div>
         <nav class="flex-1 space-y-2">
             <button id="dashboard-nav-btn" class="sidebar-button active">
-                <i class="fas fa-tachometer-alt mr-3"></i>
+                <i class="fas fa-tachometer-alt fa-fw mr-3"></i>
                 <span>Dashboard</span>
             </button>
             <button id="orders-button" class="sidebar-button">
-                <i class="fas fa-clipboard-list mr-3"></i>
+                <i class="fas fa-clipboard-list fa-fw mr-3"></i>
                 <span>Orders</span>
             </button>
             <button id="add-product-nav-btn" class="sidebar-button">
-                <i class="fas fa-box-open mr-3"></i>
+                <i class="fas fa-box-open fa-fw mr-3"></i>
                 <span>Add Product</span>
             </button>
             <button id="all-products-nav-btn" class="sidebar-button">
-                <i class="fas fa-boxes mr-3"></i>
+                <i class="fas fa-boxes fa-fw mr-3"></i>
                 <span>All Products</span>
             </button>
-            <!-- NEW BUTTON: Admins -->
             <button id="admins-nav-btn" class="sidebar-button">
-                <i class="fas fa-user-shield mr-3"></i>
+                <i class="fas fa-user-shield fa-fw mr-3"></i>
                 <span>Admins</span>
             </button>
-            <!-- NEW BUTTON: Stock -->
             <button id="stock-nav-btn" class="sidebar-button">
-                <i class="fas fa-warehouse mr-3"></i> <!-- Icon for stock/warehouse -->
+                <i class="fas fa-warehouse fa-fw mr-3"></i>
                 <span>Stock</span>
             </button>
-            <!-- NEW BUTTON: Pixels -->
             <button id="pixels-nav-btn" class="sidebar-button">
-                <i class="fas fa-image mr-3"></i> <!-- Icon for pixels/images -->
+                <i class="fas fa-image fa-fw mr-3"></i>
                 <span>Pixels</span>
             </button>
-            <!-- NEW BUTTON: Fees Delivery -->
             <button id="fees-delivery-nav-btn" class="sidebar-button">
-                <i class="fas fa-dollar-sign mr-3"></i> <!-- Icon for fees/delivery -->
+                <i class="fas fa-dollar-sign fa-fw mr-3"></i>
                 <span>Fees Delivery</span>
             </button>
-            <!-- Other sidebar items can go here -->
+            <button id="site-config-nav-btn" class="sidebar-button">
+                <i class="fas fa-cog fa-fw mr-3"></i>
+                <span>Site Config</span>
+            </button>
         </nav>
-        <div class="mt-auto p-4 border-t border-gray-700">
+        <div class="sidebar-footer">
             <button id="language-toggle" class="sidebar-button">
-                <i class="fas fa-language mr-3"></i>
+                <i class="fas fa-language fa-fw mr-3"></i>
                 <span id="language-text">English</span>
             </button>
         </div>
     </aside>
 
     <!-- Main Content Area -->
-    <div class="flex-1 flex flex-col main-content-wrapper transition-all duration-300 ease-in-out">
+    <div class="flex-1 flex flex-col transition-all duration-300 ease-in-out">
         <!-- App Bar -->
-        <header class="bg-white shadow-sm p-4 flex justify-between md:justify-end items-center rounded-b-lg">
-            <!-- Hamburger menu for mobile -->
-            <button id="open-sidebar-btn" class="md:hidden text-gray-800 text-2xl">
-                <i class="fas fa-bars"></i>
-            </button>
-            <div class="flex space-x-2">
-                <!-- Any other header buttons can go here if they are not part of the sidebar -->
-            </div>
+        <header class="bg-white shadow-sm p-4 flex justify-end items-center rounded-b-lg">
+             <!-- Header content can go here -->
         </header>
 
-        <main class="flex-1 flex flex-col p-4">
+        <main class="flex-1 flex flex-col p-4 overflow-y-auto">
             <!-- Filter Section -->
             <section class="bg-gray-50 p-6 rounded-xl shadow-md mb-6">
                 <div class="flex justify-between items-center mb-4">
@@ -329,7 +314,6 @@
             stockFilter: '',
             orderPieChartInstance: null, // To store Chart.js instance
             activeSidebarButton: 'dashboard-nav-btn', // Keep track of the active button
-            isSidebarOpen: false // New state for sidebar visibility
         };
 
         // Translations map
@@ -348,7 +332,8 @@
                 'adminsButton': 'Admins',
                 'stockButton': 'Stock',
                 'pixelsButton': 'Pixels',
-                'feesDeliveryButton': 'Fees Delivery', // New translation
+                'feesDeliveryButton': 'Fees Delivery',
+                'siteConfigButton': 'Site Config', // New translation
                 'selected': 'Selected',
                 'orderSummary': 'Order Summary',
                 'totalOrders': 'Total Orders',
@@ -386,7 +371,8 @@
                 'adminsButton': 'المسؤولون',
                 'stockButton': 'المخزون',
                 'pixelsButton': 'البكسلات',
-                'feesDeliveryButton': 'رسوم التوصيل', // New translation
+                'feesDeliveryButton': 'رسوم التوصيل',
+                'siteConfigButton': 'إعدادات الموقع', // New translation
                 'selected': 'المحدد',
                 'orderSummary': 'ملخص الطلبات',
                 'totalOrders': 'إجمالي الطلبات',
@@ -426,22 +412,6 @@
             if (activeButton) {
                 activeButton.classList.add('active');
                 appState.activeSidebarButton = activeButtonId; // Update state
-            }
-        }
-
-        // Function to toggle sidebar visibility
-        function toggleSidebar() {
-            appState.isSidebarOpen = !appState.isSidebarOpen;
-            const sidebar = document.getElementById('sidebar');
-            const sidebarOverlay = document.getElementById('sidebar-overlay');
-            if (appState.isSidebarOpen) {
-                sidebar.classList.add('open');
-                sidebarOverlay.classList.add('show');
-                document.body.classList.add('no-scroll'); // Add no-scroll class to body
-            } else {
-                sidebar.classList.remove('open');
-                sidebarOverlay.classList.remove('show');
-                document.body.classList.remove('no-scroll'); // Remove no-scroll class from body
             }
         }
 
@@ -607,7 +577,8 @@
             document.getElementById('admins-nav-btn').querySelector('span').textContent = getTranslatedString('adminsButton');
             document.getElementById('stock-nav-btn').querySelector('span').textContent = getTranslatedString('stockButton');
             document.getElementById('pixels-nav-btn').querySelector('span').textContent = getTranslatedString('pixelsButton');
-            document.getElementById('fees-delivery-nav-btn').querySelector('span').textContent = getTranslatedString('feesDeliveryButton'); // Translate new button
+            document.getElementById('fees-delivery-nav-btn').querySelector('span').textContent = getTranslatedString('feesDeliveryButton');
+            document.getElementById('site-config-nav-btn').querySelector('span').textContent = getTranslatedString('siteConfigButton'); // Translate new button
 
             // Update filter button labels
             document.querySelector('#filter-today .filter-label').textContent = getTranslatedString('today');
@@ -927,11 +898,6 @@
             fetchOrders();
             fetchStockInfo(); // Fetch stock info on load
 
-            // Sidebar toggle buttons
-            document.getElementById('open-sidebar-btn').addEventListener('click', toggleSidebar);
-            document.getElementById('close-sidebar-btn').addEventListener('click', toggleSidebar);
-            document.getElementById('sidebar-overlay').addEventListener('click', toggleSidebar); // Close sidebar when clicking overlay
-
             // Language Toggle
             document.getElementById('language-toggle').addEventListener('click', toggleLanguage);
 
@@ -939,58 +905,54 @@
             document.getElementById('orders-button').addEventListener('click', () => {
                 window.location.href = 'orders-management-web.html'; // Navigate to the separate orders page
                 updateSidebarActiveState('orders-button'); // Update active state
-                if (appState.isSidebarOpen) toggleSidebar(); // Close sidebar on navigation
             });
 
             // Dashboard Navigation Button
             document.getElementById('dashboard-nav-btn').addEventListener('click', () => {
                 updateSidebarActiveState('dashboard-nav-btn');
-                if (appState.isSidebarOpen) toggleSidebar(); // Close sidebar on navigation
-                // For a multi-page app, this would typically refresh the current page or navigate to index.html if dashboard is main.
-                // Since this is admin-panel.html, and dashboard is its primary view, no explicit navigation is needed here,
-                // but the active state is updated.
+                // Since this is the main dashboard page, no navigation is needed.
             });
 
             // Add Product Navigation Button
             document.getElementById('add-product-nav-btn').addEventListener('click', () => {
                 window.location.href = 'addproduct.html'; // Navigate to addproduct.html
                 updateSidebarActiveState('add-product-nav-btn'); // Update active state
-                if (appState.isSidebarOpen) toggleSidebar(); // Close sidebar on navigation
             });
 
             // All Products Navigation Button
             document.getElementById('all-products-nav-btn').addEventListener('click', () => {
                 window.location.href = 'products.html'; // Navigate to products.html
                 updateSidebarActiveState('all-products-nav-btn'); // Update active state
-                if (appState.isSidebarOpen) toggleSidebar(); // Close sidebar on navigation
             });
             
             // Admins Navigation Button
             document.getElementById('admins-nav-btn').addEventListener('click', () => {
                 window.location.href = 'admins.html'; // Navigate to admins.html
                 updateSidebarActiveState('admins-nav-btn'); // Update active state
-                if (appState.isSidebarOpen) toggleSidebar(); // Close sidebar on navigation
             });
 
             // Stock Navigation Button
             document.getElementById('stock-nav-btn').addEventListener('click', () => {
                 window.location.href = 'stock.html'; // Navigate to stock.html
                 updateSidebarActiveState('stock-nav-btn'); // Update active state
-                if (appState.isSidebarOpen) toggleSidebar(); // Close sidebar on navigation
             });
 
             // Pixels Navigation Button
             document.getElementById('pixels-nav-btn').addEventListener('click', () => {
                 window.location.href = 'pixels.html'; // Navigate to pixels.html
                 updateSidebarActiveState('pixels-nav-btn'); // Update active state
-                if (appState.isSidebarOpen) toggleSidebar(); // Close sidebar on navigation
             });
 
-            // NEW: Fees Delivery Navigation Button
+            // Fees Delivery Navigation Button
             document.getElementById('fees-delivery-nav-btn').addEventListener('click', () => {
                 window.location.href = 'fees.html'; // Navigate to fees.html
                 updateSidebarActiveState('fees-delivery-nav-btn'); // Update active state
-                if (appState.isSidebarOpen) toggleSidebar(); // Close sidebar on navigation
+            });
+            
+            // Site Config Navigation Button
+            document.getElementById('site-config-nav-btn').addEventListener('click', () => {
+                window.location.href = 'siteconfig.html'; // Navigate to siteconfig.html
+                updateSidebarActiveState('site-config-nav-btn'); // Update active state
             });
 
             // Filter Buttons
@@ -1039,7 +1001,7 @@
                 if (appState.customEndDate && appState.customStartDate.getTime() > appState.customEndDate.getTime()) {
                     // Adjust end date if it's before start date
                     appState.customEndDate = appState.customStartDate;
-                    // Format back to YYYY-MM-DD for input field
+                    // Format back tocameraContinuous-MM-DD for input field
                     const adjustedEndDate = new Date(appState.customEndDate.getTime());
                     endDateInput.value = adjustedEndDate.toISOString().split('T')[0];
                 }
@@ -1057,7 +1019,7 @@
                 if (appState.customStartDate && appState.customEndDate.getTime() < appState.customStartDate.getTime()) {
                     // Adjust start date if it's after end date
                     appState.customStartDate = appState.customEndDate;
-                    // Format back to YYYY-MM-DD for input field
+                    // Format back to wymd-MM-DD for input field
                     const adjustedStartDate = new Date(appState.customStartDate.getTime());
                     startDateInput.value = adjustedStartDate.toISOString().split('T')[0];
                 }

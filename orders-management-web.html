@@ -14,7 +14,7 @@
             font-family: "Inter", sans-serif;
             margin: 0;
             padding: 0;
-            background-color: #f0f0f0;
+            background-color: #f8fafc; /* A lighter gray (slate-50) for better contrast */
             min-height: 100vh;
             display: flex;
             flex-direction: column;
@@ -84,67 +84,64 @@
 
         /* Specific styles for text inputs to match Flutter's black background */
         .text-input-dark {
-            background-color: #000; /* Black */
-            color: #fff; /* White text */
+            background-color: #f3f4f6; /* gray-100 */
+            color: #111827; /* gray-900 */
             border-radius: 0.5rem; /* rounded-lg */
-            border: none;
+            border: 1px solid #d1d5db; /* gray-300 */
             padding: 0.75rem 1rem; /* py-3 px-4 */
         }
         .text-input-dark::placeholder {
-            color: #a0a0a0; /* White-70 for hint */
+            color: #6b7280; /* gray-500 */
         }
         .text-input-dark:focus {
-            outline: 2px solid #fff; /* White border on focus */
+            outline: 2px solid #4f46e5; /* indigo-600 */
             outline-offset: 2px;
+            border-color: #4f46e5;
         }
 
         /* Styles for dropdowns to match Flutter's appearance */
         .dropdown-dark {
-            background-color: #000; /* Black */
-            color: #fff; /* White text */
+            background-color: #f3f4f6; /* gray-100 */
+            color: #111827; /* gray-900 */
             border-radius: 0.5rem; /* rounded-lg */
-            border: none;
+            border: 1px solid #d1d5db; /* gray-300 */
             padding: 0.75rem 1rem; /* py-3 px-4 */
             appearance: none; /* Remove default arrow */
             -webkit-appearance: none;
             -moz-appearance: none;
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='white'%3E%3Cpath fill-rule='evenodd' d='M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z' clip-rule='evenodd' /%3E%3C/svg%3E");
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='black'%3E%3Cpath fill-rule='evenodd' d='M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z' clip-rule='evenodd' /%3E%3C/svg%3E");
             background-repeat: no-repeat;
             background-position: right 0.75rem center;
             background-size: 1.5em 1.5em;
         }
         .dropdown-dark:focus {
-            outline: 2px solid #fff; /* White border on focus */
+            outline: 2px solid #4f46e5; /* indigo-600 */
             outline-offset: 2px;
         }
         .dropdown-dark option {
-            background-color: #000; /* Black background for options */
-            color: #fff; /* White text for options */
-        }
-
-        /* Custom styles for the order card to match Flutter's blueGrey[900] */
-        .order-card-bg {
-            background-color: #263238; /* Equivalent to blueGrey[900] */
+            background-color: #fff; /* white background for options */
+            color: #111827; /* dark text for options */
         }
 
         /* Custom styles for agent notes input */
         .notes-input {
-            background-color: #37474F; /* Equivalent to blueGrey[800] */
-            color: #fff;
+            background-color: #f9fafb; /* gray-50 */
+            color: #1f2937; /* gray-800 */
             border-radius: 0.5rem;
-            border: 1px solid #455A64; /* Equivalent to blueGrey[700] */
+            border: 1px solid #d1d5db; /* gray-300 */
             padding: 0.75rem 1rem;
         }
         .notes-input:focus {
             outline: 2px solid #6366f1; /* Indigo-400 */
             outline-offset: 2px;
+            border-color: #6366f1;
         }
         .notes-input::placeholder {
-            color: #a0a0a0; /* White-70 */
+            color: #9ca3af; /* gray-400 */
         }
     </style>
 </head>
-<body class="flex flex-col min-h-screen bg-gray-100">
+<body class="flex flex-col min-h-screen bg-gray-50">
 
     <!-- Message Box (Snackbar replacement) -->
     <div id="messageBox" class="hidden">
@@ -155,9 +152,9 @@
     <!-- Splash Screen -->
     <div id="splashScreen" class="fixed inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-white to-gray-100 z-50 transition-opacity duration-500 ease-out">
         <img src="https://placehold.co/180x180/000000/FFFFFF?text=Sheeka+Logo" alt="Sheeka Logo" class="w-48 h-48 mb-8 animate-fade-in-up">
-        <h1 class="text-4xl font-bold text-white tracking-wider drop-shadow-lg animate-fade-in-up-delay">Sheeka</h1>
+        <h1 class="text-4xl font-bold text-gray-800 tracking-wider drop-shadow-lg animate-fade-in-up-delay">Sheeka</h1>
         <div class="mt-10">
-            <div class="w-12 h-12 border-4 border-t-4 border-white border-solid rounded-full animate-spin"></div>
+            <div class="w-12 h-12 border-4 border-t-4 border-gray-800 border-solid rounded-full animate-spin"></div>
         </div>
     </div>
 
@@ -581,50 +578,34 @@
         }
 
         /**
-         * Gets the appropriate color for an order status.
+         * Gets the appropriate text color for an order status.
          * @param {string} status The order status.
-         * @returns {string} Tailwind CSS color class.
+         * @returns {string} Tailwind CSS text color class.
          */
         function getStatusColorClass(status) {
             switch (status) {
-                case 'confirmed': return 'text-green-700';
-                case 'cancelled': return 'text-red-700';
-                case 'tentative': return 'text-orange-700';
-                case 'pending': return 'text-indigo-700';
-                case 'dispatched': return 'text-blue-700';
-                default: return 'text-blue-gray-700';
+                case 'confirmed': return 'text-green-800';
+                case 'cancelled': return 'text-red-800';
+                case 'tentative': return 'text-orange-800';
+                case 'pending': return 'text-indigo-800';
+                case 'dispatched': return 'text-blue-800';
+                default: return 'text-gray-800';
             }
         }
 
         /**
-         * Gets the appropriate background color for an order status.
+         * Gets the appropriate background color for an order status badge.
          * @param {string} status The order status.
          * @returns {string} Tailwind CSS background color class.
          */
         function getStatusBgColorClass(status) {
             switch (status) {
-                case 'confirmed': return 'bg-green-700';
-                case 'cancelled': return 'bg-red-700';
-                case 'tentative': return 'bg-orange-700';
-                case 'pending': return 'bg-indigo-700';
-                case 'dispatched': return 'bg-blue-700';
-                default: return 'bg-blue-gray-700';
-            }
-        }
-
-        /**
-         * Gets the appropriate border color for an order status.
-         * @param {string} status The order status.
-         * @returns {string} Tailwind CSS border color class.
-         */
-        function getStatusBorderColorClass(status) {
-            switch (status) {
-                case 'confirmed': return 'border-green-700';
-                case 'cancelled': return 'border-red-700';
-                case 'tentative': return 'border-orange-700';
-                case 'pending': return 'border-indigo-700';
-                case 'dispatched': return 'border-blue-700';
-                default: return 'border-blue-gray-700';
+                case 'confirmed': return 'bg-green-100';
+                case 'cancelled': return 'bg-red-100';
+                case 'tentative': return 'bg-orange-100';
+                case 'pending': return 'bg-indigo-100';
+                case 'dispatched': return 'bg-blue-100';
+                default: return 'bg-gray-100';
             }
         }
 
@@ -1151,72 +1132,103 @@
         function createOrderCard(order) {
             const card = document.createElement('div');
             card.id = `order-card-${order._id}`;
-            card.className = 'bg-blue-gray-900 rounded-xl shadow-md p-6 mb-4 order-card-bg';
+            card.className = 'bg-white rounded-xl shadow-lg border border-gray-200 p-4 sm:p-6 mb-4 transition-shadow duration-200 hover:shadow-xl';
 
             const formattedTime = formatDateTime(order.createdAt);
             const statusColorClass = getStatusColorClass(order.status);
-            const statusBorderClass = getStatusBorderColorClass(order.status);
-            const statusBgClass = getStatusColorClass(order.status).replace('text-', 'bg-').replace('-700', '-700/10'); // For opacity
+            const statusBgClass = getStatusBgColorClass(order.status);
 
             const assignedToHtml = order.assignedTo && order.assignedTo.name
-                ? `<p class="text-teal-100 text-sm mt-1">🤝 Assigned To: ${order.assignedTo.name}</p>`
+                ? `<div class="flex items-center text-sm text-gray-600 mt-1">
+                       <i class="fa-solid fa-user-check fa-fw mr-2 text-teal-600"></i>
+                       <span class="font-medium">Assigned To:</span>
+                       <span class="ml-1">${order.assignedTo.name}</span>
+                   </div>`
                 : '';
 
             const productsHtml = order.products && Array.isArray(order.products) && order.products.length > 0
                 ? order.products.map(p => `
-                    <p class="text-white text-sm ml-3">• ${p.name || 'N/A'}</p>
-                    <p class="text-white-70 text-xs ml-6">Quantity: ${p.quantity || 'N/A'}</p>
-                    <p class="text-white-70 text-xs ml-6">Color: ${p.color || 'N/A'}</p>
-                    <p class="text-white-70 text-xs ml-6">Size: ${p.size || 'N/A'}</p>
+                    <div class="flex justify-between items-center py-1">
+                        <div class="text-gray-700">
+                            <span>${p.name || 'N/A'}</span>
+                            <span class="text-gray-500 text-xs ml-2">(x${p.quantity || 'N/A'})</span>
+                        </div>
+                        <div class="text-gray-500 text-sm">
+                            ${p.color && p.color !== 'N/A' ? `<span class="mr-2">Color: ${p.color}</span>` : ''}
+                            ${p.size && p.size !== 'N/A' ? `<span>Size: ${p.size}</span>` : ''}
+                        </div>
+                    </div>
                 `).join('')
-                : '<p class="text-white-70 text-sm">No products listed.</p>';
+                : '<p class="text-gray-500 text-sm">No products listed.</p>';
 
             const notesValue = orderNotes[order._id] || order.notes || '';
 
             card.innerHTML = `
-                <div class="flex justify-between items-start">
+                <!-- Card Header -->
+                <div class="flex flex-col sm:flex-row justify-between items-start gap-4">
                     <div class="flex-1">
-                        <p class="font-bold text-lg text-white">👤 ${order.fullName || 'N/A'}</p>
-                        <p class="text-white-70 text-sm mt-1">📱 ${order.phoneNumber || 'N/A'}</p>
-                    </div>
-                    <div class="text-right">
-                        <p class="text-white-70 text-xs">${formattedTime}</p>
-                        <div class="mt-2 px-2 py-1 rounded-full ${statusBgClass} ${statusBorderClass} border text-xs font-bold ${statusColorClass}">
-                            📦 Status: ${order.status || 'N/A'}
+                        <div class="flex items-center gap-3">
+                             <p class="font-bold text-lg text-gray-800">${order.fullName || 'N/A'}</p>
+                             <div class="px-3 py-1 ${statusBgClass} ${statusColorClass} rounded-full text-xs font-semibold capitalize">
+                                ${order.status || 'N/A'}
+                             </div>
                         </div>
+                        <p class="text-gray-500 text-sm mt-1">
+                            <i class="fa-solid fa-phone fa-fw mr-1"></i>${order.phoneNumber || 'N/A'}
+                        </p>
+                        <p class="text-gray-500 text-sm mt-1">
+                            <i class="fa-solid fa-hashtag fa-fw mr-1"></i>Order ID: ${order._id || 'N/A'}
+                        </p>
+                    </div>
+                    <div class="text-left sm:text-right flex-shrink-0">
+                        <p class="text-gray-600 text-sm font-medium">
+                           <i class="fa-solid fa-clock fa-fw mr-1"></i>${formattedTime}
+                        </p>
+                        <p class="font-bold text-lg text-indigo-600 mt-1">DZD ${order.totalPrice || 'N/A'}</p>
                     </div>
                 </div>
-                <div class="flex justify-center mt-3">
-                    <button class="expand-toggle-btn text-white text-2xl">
-                        <i class="fa-solid fa-chevron-down"></i>
+                
+                <!-- Expand Button -->
+                <div class="text-center mt-2">
+                    <button class="expand-toggle-btn text-gray-500 hover:text-indigo-600 transition-colors duration-200 p-2">
+                        <i class="fa-solid fa-chevron-down text-sm"></i>
                     </button>
                 </div>
 
                 <!-- Collapsible Content -->
-                <div class="collapsible-content hidden">
-                    <hr class="border-white-30 my-4">
-                    <p class="text-white-70 text-sm">📍 ${order.wilaya || 'N/A'} - ${order.commune || 'N/A'}</p>
-                    ${assignedToHtml}
-                    <p class="font-bold text-base text-white mt-3">🛍️ Products:</p>
-                    ${productsHtml}
-                    <p class="text-right font-bold text-base text-teal-300 mt-3">Total Price: DZD${order.totalPrice || 'N/A'}</p>
-
+                <div class="collapsible-content hidden pt-4 mt-4 border-t border-gray-200">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <h4 class="font-semibold text-gray-700 mb-2">Shipping Details</h4>
+                            <div class="text-gray-600 text-sm space-y-1">
+                                <p><i class="fa-solid fa-location-dot fa-fw mr-2"></i>${order.wilaya || 'N/A'} - ${order.commune || 'N/A'}</p>
+                                ${assignedToHtml}
+                            </div>
+                        </div>
+                        <div>
+                             <h4 class="font-semibold text-gray-700 mb-2">Products</h4>
+                             <div class="text-gray-600 text-sm space-y-1">
+                                ${productsHtml}
+                             </div>
+                        </div>
+                    </div>
+                    
                     <div class="mt-4">
-                        <label for="notes-${order._id}" class="block text-white-70 text-sm mb-1">Agent Notes</label>
+                        <label for="notes-${order._id}" class="block text-sm font-medium text-gray-700 mb-1">Agent Notes</label>
                         <textarea id="notes-${order._id}" class="w-full p-2 notes-input h-20" placeholder="Enter notes here...">${notesValue}</textarea>
                     </div>
 
                     ${currentFilter !== 'dispatched' ? `
-                    <div class="flex flex-wrap justify-between items-center mt-4 space-x-2">
-                        <div class="flex space-x-2 mb-2 md:mb-0">
-                            <button data-order-id="${order._id}" class="edit-btn px-3 py-2 border border-blue-gray-500 text-white rounded-lg hover:bg-blue-gray-700 transition-colors duration-200 text-sm flex items-center">
+                    <div class="flex flex-wrap justify-between items-center mt-4 gap-2">
+                        <div class="flex space-x-2">
+                            <button data-order-id="${order._id}" class="edit-btn px-3 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors duration-200 text-sm flex items-center">
                                 <i class="fa-solid fa-edit mr-1 text-base"></i> Edit
                             </button>
-                            <button data-order-id="${order._id}" class="delete-btn px-3 py-2 bg-red-700 text-white rounded-lg hover:bg-red-800 transition-colors duration-200 text-sm flex items-center">
+                            <button data-order-id="${order._id}" class="delete-btn px-3 py-2 bg-red-50 border border-red-200 text-red-700 rounded-lg hover:bg-red-100 transition-colors duration-200 text-sm flex items-center">
                                 <i class="fa-solid fa-trash-alt mr-1 text-base"></i> Delete
                             </button>
                         </div>
-                        <div class="flex space-x-2 flex-wrap justify-end">
+                        <div class="flex space-x-2 flex-wrap justify-end gap-2">
                             ${((order.status === 'pending' || order.status === 'tentative') && (currentUserRole === 'admin' || (currentUserId && order.assignedTo?._id === currentUserId && currentUserRole === 'confirmation'))) ? `
                             <button data-order-id="${order._id}" data-status="confirmed" class="status-update-btn px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors duration-200 text-sm">Confirm</button>
                             ` : ''}
@@ -1224,10 +1236,10 @@
                             <button data-order-id="${order._id}" data-status="cancelled" class="status-update-btn px-3 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors duration-200 text-sm">Cancel</button>
                             ` : ''}
                             ${(order.status !== 'tentative' && (currentUserRole === 'admin' || (currentUserId && order.assignedTo?._id === currentUserId && currentUserRole === 'confirmation'))) ? `
-                            <button data-order-id="${order._id}" data-status="tentative" class="status-update-btn px-3 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors duration-200 text-sm">Tentative</button>
+                            <button data-order-id="${order._id}" data-status="tentative" class="status-update-btn px-3 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors duration-200 text-sm">Tentative</button>
                             ` : ''}
                             ${(order.status === 'confirmed' && (currentUserRole === 'admin' || (currentUserId && order.assignedTo?._id === currentUserId && currentUserRole === 'confirmation'))) ? `
-                            <button data-order-id="${order._id}" class="dispatch-btn px-3 py-2 bg-blue-800 text-white rounded-lg hover:bg-blue-900 transition-colors duration-200 text-sm">Dispatch</button>
+                            <button data-order-id="${order._id}" class="dispatch-btn px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200 text-sm">Dispatch</button>
                             ` : ''}
                         </div>
                     </div>
@@ -1239,15 +1251,9 @@
             card.querySelector('.expand-toggle-btn').addEventListener('click', (e) => {
                 const content = card.querySelector('.collapsible-content');
                 const icon = e.currentTarget.querySelector('i');
-                if (content.classList.contains('hidden')) {
-                    content.classList.remove('hidden');
-                    icon.classList.remove('fa-chevron-down');
-                    icon.classList.add('fa-chevron-up');
-                } else {
-                    content.classList.add('hidden');
-                    icon.classList.remove('fa-chevron-up');
-                    icon.classList.add('fa-chevron-down');
-                }
+                content.classList.toggle('hidden');
+                icon.classList.toggle('fa-chevron-down');
+                icon.classList.toggle('fa-chevron-up');
             });
 
             card.querySelector(`#notes-${order._id}`).addEventListener('input', (e) => {

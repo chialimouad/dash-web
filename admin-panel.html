@@ -60,6 +60,20 @@
             flex-direction: column;
             padding: 1rem 0; /* Vertical padding only */
             box-shadow: 2px 0 10px rgba(0,0,0,0.2);
+            transition: transform 0.3s ease-in-out; /* Added for smooth transition */
+            transform: translateX(-100%); /* Hide sidebar by default on mobile */
+        }
+
+        /* Show sidebar on medium screens and up */
+        @media (min-width: 768px) {
+            .sidebar {
+                transform: translateX(0);
+            }
+        }
+
+        /* This class will be toggled with JS to show the sidebar on mobile */
+        .sidebar.open {
+            transform: translateX(0);
         }
 
         .sidebar-header {
@@ -227,9 +241,18 @@
     </aside>
 
     <!-- Main Content Area -->
-    <div class="flex-1 flex flex-col transition-all duration-300 ease-in-out ml-[250px]">
+    <div class="flex-1 flex flex-col transition-all duration-300 ease-in-out md:ml-[250px]">
+        <!-- Overlay for mobile when sidebar is open -->
+        <div id="sidebar-overlay" class="fixed inset-0 bg-black bg-opacity-50 z-30 hidden md:hidden"></div>
+        
         <!-- App Bar -->
-        <header class="bg-white shadow-sm p-4 flex justify-end items-center rounded-b-lg">
+        <header class="bg-white shadow-sm p-4 flex justify-between items-center rounded-b-lg">
+             <!-- Hamburger Menu (visible on mobile) -->
+            <button id="menu-toggle" class="md:hidden text-gray-600 hover:text-gray-800 focus:outline-none">
+                <i class="fas fa-bars text-2xl"></i>
+            </button>
+             <!-- Spacer to allow content on the right -->
+            <div class="flex-grow"></div>
              <!-- Header content can go here -->
         </header>
 
@@ -925,6 +948,23 @@
             fetchOrders();
             fetchStockInfo(); // Fetch stock info on load
 
+            // Responsive Sidebar Toggle
+            const menuToggle = document.getElementById('menu-toggle');
+            const sidebar = document.getElementById('sidebar');
+            const sidebarOverlay = document.getElementById('sidebar-overlay');
+
+            if (menuToggle && sidebar && sidebarOverlay) {
+                menuToggle.addEventListener('click', () => {
+                    sidebar.classList.toggle('open');
+                    sidebarOverlay.classList.toggle('hidden');
+                });
+
+                sidebarOverlay.addEventListener('click', () => {
+                    sidebar.classList.remove('open');
+                    sidebarOverlay.classList.add('hidden');
+                });
+            }
+
             // Language Toggle
             document.getElementById('language-toggle').addEventListener('click', toggleLanguage);
 
@@ -937,7 +977,7 @@
                 console.log('Logging out and clearing stored data...');
 
                 // Redirect to a login page (assuming one exists)
-                window.location.href = 'index.html';
+                window.location.href = 'login.html';
             });
 
             // Orders Button

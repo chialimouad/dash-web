@@ -90,7 +90,7 @@
         </div>
     </header>
 
-    <main class="container mx-auto p-4 md:p-8">
+    <main id="main-content" class="container mx-auto p-4 md:p-8">
         <form id="site-settings-form" novalidate>
             <!-- General Site Info -->
             <section class="form-section">
@@ -173,12 +173,33 @@
             </div>
         </form>
     </main>
+    
+    <!-- Access Denied Message -->
+    <div id="access-denied" class="hidden text-center p-8">
+        <i class="fas fa-exclamation-triangle text-5xl text-red-500 mb-4"></i>
+        <h2 class="text-2xl font-bold text-gray-800">Access Denied</h2>
+        <p class="text-gray-600 mt-2">You do not have permission to view this page. Please contact an administrator.</p>
+    </div>
+
 
     <!-- Toast Notification -->
     <div id="toast"></div>
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
+            // --- Role Check ---
+            const userRole = localStorage.getItem('role');
+            const mainContent = document.getElementById('main-content');
+            const accessDeniedMessage = document.getElementById('access-denied');
+            const header = document.getElementById('main-header');
+            
+            if (userRole !== 'admin') {
+                mainContent.style.display = 'none';
+                header.style.display = 'none';
+                accessDeniedMessage.classList.remove('hidden');
+                return; // Stop further execution
+            }
+
             // --- Configuration and State ---
             const BASE_URL = 'https://sheeka.onrender.com';
             const designNames = [
@@ -188,7 +209,6 @@
             ];
             
             const form = document.getElementById('site-settings-form');
-            const header = document.getElementById('main-header');
 
             // --- Helper Functions ---
 

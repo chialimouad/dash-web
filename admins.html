@@ -139,296 +139,315 @@
         <!-- Main content will be rendered here -->
     </div>
 
+    <!-- Access Denied Message -->
+    <div id="access-denied" class="hidden text-center p-8">
+        <i class="fas fa-exclamation-triangle text-5xl text-red-500 mb-4"></i>
+        <h2 class="text-2xl font-bold text-gray-800">Access Denied</h2>
+        <p class="text-gray-600 mt-2">You do not have permission to view this page. Please contact an administrator.</p>
+    </div>
+
     <!-- Message Box for Alerts -->
     <div id="message-box" class="fixed bottom-4 right-4 bg-gray-800 text-white p-4 rounded-lg shadow-lg hidden z-50">
         <p id="message-text"></p>
     </div>
 
     <script>
-        // Define the backend base URL
-        const BASE_URL = 'https://sheeka.onrender.com';
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- Role Check ---
+            const userRole = localStorage.getItem('role');
+            const appContainer = document.getElementById('app-container');
+            const accessDeniedMessage = document.getElementById('access-denied');
 
-        // Global state management
-        const appState = {
-            name: '',
-            email: '',
-            password: '',
-            role: 'user',
-            isLoading: false,
-            users: [], // Stores registered users
-        };
-
-        // DOM element references
-        const appContainer = document.getElementById('app-container');
-        const messageBox = document.getElementById('message-box');
-        const messageText = document.getElementById('message-text');
-
-        /**
-         * Displays a snackbar-like message at the bottom of the screen.
-         * @param {string} message - The message to display.
-         * @param {boolean} isError - True if it's an error message, false for success.
-         */
-        function showMessage(message, isError = false) {
-            messageText.textContent = message;
-            messageBox.classList.remove('hidden', 'bg-green-600', 'bg-red-600', 'message-box');
-            if (isError) {
-                messageBox.classList.add('bg-red-600');
-            } else {
-                messageBox.classList.add('bg-green-600');
+            if (userRole !== 'admin') {
+                appContainer.style.display = 'none';
+                accessDeniedMessage.classList.remove('hidden');
+                return; // Stop further execution for non-admins
             }
-            messageBox.classList.add('message-box'); // Apply animation
-            setTimeout(() => {
-                messageBox.classList.add('hidden');
-                messageBox.classList.remove('message-box'); // Remove animation class after it finishes
-            }, 3000); // Hide after 3 seconds
-        }
 
-        /**
-         * Renders the entire application UI based on the current appState.
-         */
-        function renderApp() {
-            const isMobile = window.innerWidth < 800;
-            appContainer.innerHTML = ''; // Clear previous content
+            // Define the backend base URL
+            const BASE_URL = 'https://sheeka.onrender.com';
 
-            if (isMobile) {
-                appContainer.innerHTML = `
-                    <div class="w-full max-w-md mx-auto py-10">
-                        ${renderAnimatedForm()}
-                        <div class="mt-8">
-                            ${renderUserList()}
-                        </div>
-                    </div>
-                `;
-            } else {
-                appContainer.innerHTML = `
-                    <div class="desktop-layout">
-                        <div class="desktop-left-panel">
-                            <div class="text-center">
-                                <img src="https://placehold.co/200x200/FFFFFF/000000?text=Sheeka+Logo" alt="Sheeka Logo" class="mx-auto" />
-                                <h2 class="text-2xl font-bold text-gray-800 mt-4">Welcome to Sheeka Admin</h2>
-                                <p class="text-gray-600">Manage your e-commerce platform efficiently.</p>
-                            </div>
-                        </div>
-                        <div class="desktop-right-panel">
+            // Global state management
+            const appState = {
+                name: '',
+                email: '',
+                password: '',
+                role: 'user',
+                isLoading: false,
+                users: [], // Stores registered users
+            };
+
+            // DOM element references
+            const messageBox = document.getElementById('message-box');
+            const messageText = document.getElementById('message-text');
+
+            /**
+             * Displays a snackbar-like message at the bottom of the screen.
+             * @param {string} message - The message to display.
+             * @param {boolean} isError - True if it's an error message, false for success.
+             */
+            function showMessage(message, isError = false) {
+                messageText.textContent = message;
+                messageBox.classList.remove('hidden', 'bg-green-600', 'bg-red-600', 'message-box');
+                if (isError) {
+                    messageBox.classList.add('bg-red-600');
+                } else {
+                    messageBox.classList.add('bg-green-600');
+                }
+                messageBox.classList.add('message-box'); // Apply animation
+                setTimeout(() => {
+                    messageBox.classList.add('hidden');
+                    messageBox.classList.remove('message-box'); // Remove animation class after it finishes
+                }, 3000); // Hide after 3 seconds
+            }
+
+            /**
+             * Renders the entire application UI based on the current appState.
+             */
+            function renderApp() {
+                const isMobile = window.innerWidth < 800;
+                appContainer.innerHTML = ''; // Clear previous content
+
+                if (isMobile) {
+                    appContainer.innerHTML = `
+                        <div class="w-full max-w-md mx-auto py-10">
                             ${renderAnimatedForm()}
-                            <div class="mt-8 user-list-container">
+                            <div class="mt-8">
                                 ${renderUserList()}
                             </div>
                         </div>
-                    </div>
-                `;
-            }
-
-            // Re-attach event listeners after rendering
-            attachEventListeners();
-        }
-
-        /**
-         * Renders the animated registration form HTML.
-         * For simplicity, the animation is handled by CSS classes on initial load.
-         */
-        function renderAnimatedForm() {
-            return `
-                <div class="custom-card animate-fade-in-up">
-                    <h2 class="text-2xl md:text-3xl font-bold text-blue-900 mb-2">Create Your Account</h2>
-                    <p class="text-gray-600 mb-6">Join Sheeka and start managing your orders!</p>
-                    <form id="register-form">
-                        <div class="mb-4">
-                            <label for="name" class="block text-gray-700 text-sm font-semibold mb-2">Full Name</label>
-                            <div class="relative">
-                                <i class="fas fa-user absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
-                                <input type="text" id="name" name="name" placeholder="Enter your full name"
-                                       class="custom-input pl-10" value="${appState.name}">
-                                <p class="text-red-500 text-xs mt-1 hidden" id="name-error"></p>
-                            </div>
-                        </div>
-                        <div class="mb-4">
-                            <label for="email" class="block text-gray-700 text-sm font-semibold mb-2">Email</label>
-                            <div class="relative">
-                                <i class="fas fa-envelope absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
-                                <input type="email" id="email" name="email" placeholder="Enter your email"
-                                       class="custom-input pl-10" value="${appState.email}">
-                                <p class="text-red-500 text-xs mt-1 hidden" id="email-error"></p>
-                            </div>
-                        </div>
-                        <div class="mb-6">
-                            <label for="password" class="block text-gray-700 text-sm font-semibold mb-2">Password</label>
-                            <div class="relative">
-                                <i class="fas fa-lock absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
-                                <input type="password" id="password" name="password" placeholder="Enter your password"
-                                       class="custom-input pl-10" value="${appState.password}">
-                                <p class="text-red-500 text-xs mt-1 hidden" id="password-error"></p>
-                            </div>
-                        </div>
-                        <div class="mb-6">
-                            <label for="role" class="block text-gray-700 text-sm font-semibold mb-2">Role</label>
-                            <div class="relative">
-                                <i class="fas fa-shield-alt absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
-                                <select id="role" name="role" class="custom-input appearance-none pr-8 pl-10">
-                                    <option value="user" ${appState.role === 'user' ? 'selected' : ''}>User</option>
-                                    <option value="admin" ${appState.role === 'admin' ? 'selected' : ''}>Admin</option>
-                                    <option value="confirmation" ${appState.role === 'confirmation' ? 'selected' : ''}>Confirmation Agent</option>
-                                    <option value="stockagent" ${appState.role === 'stockagent' ? 'selected' : ''}>Stock Agent</option>
-                                </select>
-                                <i class="fas fa-chevron-down absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"></i>
-                            </div>
-                        </div>
-                        <button type="submit" id="register-btn" class="custom-button">
-                            ${appState.isLoading ? '<i class="fas fa-spinner animate-spin"></i> Loading...' : 'Register'}
-                        </button>
-                    </form>
-                </div>
-            `;
-        }
-
-        /**
-         * Renders the list of registered users.
-         */
-        function renderUserList() {
-            if (appState.users.length === 0) {
-                return `
-                    <div class="text-center text-gray-500 italic p-4 custom-card">
-                        No users registered yet.
-                    </div>
-                `;
-            }
-            return `
-                <div class="custom-card">
-                    <h3 class="text-xl font-bold text-blue-900 mb-4">Registered Users</h3>
-                    <ul class="space-y-3">
-                        ${appState.users.map(user => `
-                            <li class="flex items-center bg-gray-50 p-3 rounded-lg shadow-sm">
-                                <div class="w-10 h-10 bg-blue-200 rounded-full flex items-center justify-center mr-3">
-                                    <i class="fas fa-user text-blue-700"></i>
+                    `;
+                } else {
+                    appContainer.innerHTML = `
+                        <div class="desktop-layout">
+                            <div class="desktop-left-panel">
+                                <div class="text-center">
+                                    <img src="https://placehold.co/200x200/FFFFFF/000000?text=Sheeka+Logo" alt="Sheeka Logo" class="mx-auto" />
+                                    <h2 class="text-2xl font-bold text-gray-800 mt-4">Welcome to Sheeka Admin</h2>
+                                    <p class="text-gray-600">Manage your e-commerce platform efficiently.</p>
                                 </div>
-                                <div class="flex-1">
-                                    <p class="font-semibold text-gray-800">${user.name}</p>
-                                    <p class="text-sm text-gray-600">Role: ${user.role}</p>
+                            </div>
+                            <div class="desktop-right-panel">
+                                ${renderAnimatedForm()}
+                                <div class="mt-8 user-list-container">
+                                    ${renderUserList()}
                                 </div>
-                                <i class="fas fa-arrow-right text-gray-400 text-sm"></i>
-                            </li>
-                        `).join('')}
-                    </ul>
-                </div>
-            `;
-        }
-
-        /**
-         * Attaches event listeners to dynamically created elements.
-         */
-        function attachEventListeners() {
-            const registerForm = document.getElementById('register-form');
-            if (registerForm) {
-                registerForm.addEventListener('submit', handleRegisterSubmit);
-                // Add input event listeners for real-time validation feedback
-                document.getElementById('name').addEventListener('input', validateField);
-                document.getElementById('email').addEventListener('input', validateField);
-                document.getElementById('password').addEventListener('input', validateField);
-            }
-        }
-
-        /**
-         * Validates a single input field and shows/hides error messages.
-         * @param {Event} event - The input event.
-         */
-        function validateField(event) {
-            const input = event.target;
-            const errorElement = document.getElementById(`${input.id}-error`);
-            let errorMessage = '';
-
-            if (input.value.trim() === '') {
-                errorMessage = `Please enter your ${input.id.replace('-', ' ')}`;
-            } else if (input.id === 'email' && !input.value.includes('@')) {
-                errorMessage = 'Please enter a valid email address';
-            } else if (input.id === 'password' && input.value.length < 6) {
-                errorMessage = 'Password must be at least 6 characters long';
-            }
-
-            if (errorMessage) {
-                input.classList.add('error');
-                errorElement.textContent = errorMessage;
-                errorElement.classList.remove('hidden');
-            } else {
-                input.classList.remove('error');
-                errorElement.classList.add('hidden');
-            }
-        }
-
-        /**
-         * Handles the form submission for user registration.
-         * @param {Event} event - The form submission event.
-         */
-        async function handleRegisterSubmit(event) {
-            event.preventDefault(); // Prevent default form submission
-
-            // Get form data
-            appState.name = document.getElementById('name').value.trim();
-            appState.email = document.getElementById('email').value.trim();
-            appState.password = document.getElementById('password').value.trim();
-            appState.role = document.getElementById('role').value;
-
-            // Basic client-side validation
-            let isValid = true;
-            // Trigger validation for all fields
-            ['name', 'email', 'password'].forEach(id => {
-                const input = document.getElementById(id);
-                // Manually trigger input event to run validation logic
-                input.dispatchEvent(new Event('input'));
-                if (input.classList.contains('error')) {
-                    isValid = false;
+                            </div>
+                        </div>
+                    `;
                 }
-            });
 
-            if (!isValid) {
-                showMessage('Please correct the errors in the form.', true);
-                return;
+                // Re-attach event listeners after rendering
+                attachEventListeners();
             }
 
-            appState.isLoading = true;
-            renderApp(); // Re-render to show loading state
+            /**
+             * Renders the animated registration form HTML.
+             * For simplicity, the animation is handled by CSS classes on initial load.
+             */
+            function renderAnimatedForm() {
+                return `
+                    <div class="custom-card animate-fade-in-up">
+                        <h2 class="text-2xl md:text-3xl font-bold text-blue-900 mb-2">Create Your Account</h2>
+                        <p class="text-gray-600 mb-6">Join Sheeka and start managing your orders!</p>
+                        <form id="register-form">
+                            <div class="mb-4">
+                                <label for="name" class="block text-gray-700 text-sm font-semibold mb-2">Full Name</label>
+                                <div class="relative">
+                                    <i class="fas fa-user absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                                    <input type="text" id="name" name="name" placeholder="Enter your full name"
+                                           class="custom-input pl-10" value="${appState.name}">
+                                    <p class="text-red-500 text-xs mt-1 hidden" id="name-error"></p>
+                                </div>
+                            </div>
+                            <div class="mb-4">
+                                <label for="email" class="block text-gray-700 text-sm font-semibold mb-2">Email</label>
+                                <div class="relative">
+                                    <i class="fas fa-envelope absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                                    <input type="email" id="email" name="email" placeholder="Enter your email"
+                                           class="custom-input pl-10" value="${appState.email}">
+                                    <p class="text-red-500 text-xs mt-1 hidden" id="email-error"></p>
+                                </div>
+                            </div>
+                            <div class="mb-6">
+                                <label for="password" class="block text-gray-700 text-sm font-semibold mb-2">Password</label>
+                                <div class="relative">
+                                    <i class="fas fa-lock absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                                    <input type="password" id="password" name="password" placeholder="Enter your password"
+                                           class="custom-input pl-10" value="${appState.password}">
+                                    <p class="text-red-500 text-xs mt-1 hidden" id="password-error"></p>
+                                </div>
+                            </div>
+                            <div class="mb-6">
+                                <label for="role" class="block text-gray-700 text-sm font-semibold mb-2">Role</label>
+                                <div class="relative">
+                                    <i class="fas fa-shield-alt absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                                    <select id="role" name="role" class="custom-input appearance-none pr-8 pl-10">
+                                        <option value="user" ${appState.role === 'user' ? 'selected' : ''}>User</option>
+                                        <option value="admin" ${appState.role === 'admin' ? 'selected' : ''}>Admin</option>
+                                        <option value="confirmation" ${appState.role === 'confirmation' ? 'selected' : ''}>Confirmation Agent</option>
+                                        <option value="stockagent" ${appState.role === 'stockagent' ? 'selected' : ''}>Stock Agent</option>
+                                    </select>
+                                    <i class="fas fa-chevron-down absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"></i>
+                                </div>
+                            </div>
+                            <button type="submit" id="register-btn" class="custom-button">
+                                ${appState.isLoading ? '<i class="fas fa-spinner animate-spin"></i> Loading...' : 'Register'}
+                            </button>
+                        </form>
+                    </div>
+                `;
+            }
 
-            try {
-                const response = await fetch(`${BASE_URL}/auth/register`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        name: appState.name,
-                        email: appState.email,
-                        password: appState.password,
-                        role: appState.role,
-                    }),
+            /**
+             * Renders the list of registered users.
+             */
+            function renderUserList() {
+                if (appState.users.length === 0) {
+                    return `
+                        <div class="text-center text-gray-500 italic p-4 custom-card">
+                            No users registered yet.
+                        </div>
+                    `;
+                }
+                return `
+                    <div class="custom-card">
+                        <h3 class="text-xl font-bold text-blue-900 mb-4">Registered Users</h3>
+                        <ul class="space-y-3">
+                            ${appState.users.map(user => `
+                                <li class="flex items-center bg-gray-50 p-3 rounded-lg shadow-sm">
+                                    <div class="w-10 h-10 bg-blue-200 rounded-full flex items-center justify-center mr-3">
+                                        <i class="fas fa-user text-blue-700"></i>
+                                    </div>
+                                    <div class="flex-1">
+                                        <p class="font-semibold text-gray-800">${user.name}</p>
+                                        <p class="text-sm text-gray-600">Role: ${user.role}</p>
+                                    </div>
+                                    <i class="fas fa-arrow-right text-gray-400 text-sm"></i>
+                                </li>
+                            `).join('')}
+                        </ul>
+                    </div>
+                `;
+            }
+
+            /**
+             * Attaches event listeners to dynamically created elements.
+             */
+            function attachEventListeners() {
+                const registerForm = document.getElementById('register-form');
+                if (registerForm) {
+                    registerForm.addEventListener('submit', handleRegisterSubmit);
+                    // Add input event listeners for real-time validation feedback
+                    document.getElementById('name').addEventListener('input', validateField);
+                    document.getElementById('email').addEventListener('input', validateField);
+                    document.getElementById('password').addEventListener('input', validateField);
+                }
+            }
+
+            /**
+             * Validates a single input field and shows/hides error messages.
+             * @param {Event} event - The input event.
+             */
+            function validateField(event) {
+                const input = event.target;
+                const errorElement = document.getElementById(`${input.id}-error`);
+                let errorMessage = '';
+
+                if (input.value.trim() === '') {
+                    errorMessage = `Please enter your ${input.id.replace('-', ' ')}`;
+                } else if (input.id === 'email' && !input.value.includes('@')) {
+                    errorMessage = 'Please enter a valid email address';
+                } else if (input.id === 'password' && input.value.length < 6) {
+                    errorMessage = 'Password must be at least 6 characters long';
+                }
+
+                if (errorMessage) {
+                    input.classList.add('error');
+                    errorElement.textContent = errorMessage;
+                    errorElement.classList.remove('hidden');
+                } else {
+                    input.classList.remove('error');
+                    errorElement.classList.add('hidden');
+                }
+            }
+
+            /**
+             * Handles the form submission for user registration.
+             * @param {Event} event - The form submission event.
+             */
+            async function handleRegisterSubmit(event) {
+                event.preventDefault(); // Prevent default form submission
+
+                // Get form data
+                appState.name = document.getElementById('name').value.trim();
+                appState.email = document.getElementById('email').value.trim();
+                appState.password = document.getElementById('password').value.trim();
+                appState.role = document.getElementById('role').value;
+
+                // Basic client-side validation
+                let isValid = true;
+                // Trigger validation for all fields
+                ['name', 'email', 'password'].forEach(id => {
+                    const input = document.getElementById(id);
+                    // Manually trigger input event to run validation logic
+                    input.dispatchEvent(new Event('input'));
+                    if (input.classList.contains('error')) {
+                        isValid = false;
+                    }
                 });
 
-                appState.isLoading = false;
-
-                if (response.ok || response.status === 201) {
-                    // Assuming successful registration, add user to local list and clear form
-                    appState.users.push({ name: appState.name, role: appState.role });
-                    appState.name = ''; // Clear form fields
-                    appState.email = '';
-                    appState.password = '';
-                    appState.role = 'user'; // Reset role to default
-                    showMessage('Registration successful!', false);
-                } else {
-                    const errorData = await response.json();
-                    showMessage(`Registration failed: ${errorData.message || response.status}`, true);
+                if (!isValid) {
+                    showMessage('Please correct the errors in the form.', true);
+                    return;
                 }
-            } catch (error) {
-                appState.isLoading = false;
-                console.error('Error during registration:', error);
-                showMessage(`Error connecting to the server: ${error.message}`, true);
-            } finally {
-                renderApp(); // Re-render to update user list and reset form/loading state
+
+                appState.isLoading = true;
+                renderApp(); // Re-render to show loading state
+
+                try {
+                    const response = await fetch(`${BASE_URL}/auth/register`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            name: appState.name,
+                            email: appState.email,
+                            password: appState.password,
+                            role: appState.role,
+                        }),
+                    });
+
+                    appState.isLoading = false;
+
+                    if (response.ok || response.status === 201) {
+                        // Assuming successful registration, add user to local list and clear form
+                        appState.users.push({ name: appState.name, role: appState.role });
+                        appState.name = ''; // Clear form fields
+                        appState.email = '';
+                        appState.password = '';
+                        appState.role = 'user'; // Reset role to default
+                        showMessage('Registration successful!', false);
+                    } else {
+                        const errorData = await response.json();
+                        showMessage(`Registration failed: ${errorData.message || response.status}`, true);
+                    }
+                } catch (error) {
+                    appState.isLoading = false;
+                    console.error('Error during registration:', error);
+                    showMessage(`Error connecting to the server: ${error.message}`, true);
+                } finally {
+                    renderApp(); // Re-render to update user list and reset form/loading state
+                }
             }
-        }
 
-        // Initial render when the DOM is fully loaded
-        document.addEventListener('DOMContentLoaded', renderApp);
+            // Initial render when the DOM is fully loaded
+            renderApp();
 
-        // Re-render on window resize to handle responsive layout changes
-        window.addEventListener('resize', renderApp);
+            // Re-render on window resize to handle responsive layout changes
+            window.addEventListener('resize', renderApp);
+        });
     </script>
 </body>
 </html>

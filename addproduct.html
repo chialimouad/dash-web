@@ -75,7 +75,7 @@
     </style>
 </head>
 <body class="min-h-screen flex flex-col items-center py-8 px-4">
-    <div class="max-w-4xl w-full bg-white shadow-lg rounded-xl overflow-hidden">
+    <div id="main-container" class="max-w-4xl w-full bg-white shadow-lg rounded-xl overflow-hidden">
         <!-- App Bar / Header -->
         <header class="bg-black text-white p-4 flex justify-between items-center rounded-t-xl">
             <h1 id="app-title" class="text-2xl font-bold"></h1>
@@ -247,6 +247,13 @@
                 </div>
             </form>
         </main>
+    </div>
+
+    <!-- Access Denied Message -->
+    <div id="access-denied" class="hidden text-center p-8">
+        <i class="fas fa-exclamation-triangle text-5xl text-red-500 mb-4"></i>
+        <h2 class="text-2xl font-bold text-gray-800">Access Denied</h2>
+        <p class="text-gray-600 mt-2">You do not have permission to view this page. Please contact an administrator.</p>
     </div>
 
     <!-- Color Selection Modal -->
@@ -1231,77 +1238,6 @@
         }
 
 
-        // --- Event Listeners ---
-
-        languageToggle.addEventListener('click', () => {
-            languageDropdown.classList.toggle('hidden');
-        });
-
-        languageDropdown.querySelectorAll('button').forEach(button => {
-            button.addEventListener('click', (e) => {
-                currentLocale = e.target.dataset.locale || e.target.closest('button').dataset.locale;
-                updateLocalizedText();
-                languageDropdown.classList.add('hidden');
-                // Adjust text direction for Arabic
-                if (currentLocale === 'ar') {
-                    document.body.style.direction = 'rtl';
-                    document.documentElement.lang = 'ar';
-                } else {
-                    document.body.style.direction = 'ltr';
-                    document.documentElement.lang = 'en';
-                }
-            });
-        });
-
-        // Stepper navigation buttons
-        nextButton.addEventListener('click', onStepContinue);
-        backButton.addEventListener('click', onStepCancel);
-
-        // Stepper indicator clicks
-        stepIndicators.forEach((indicator, index) => {
-            indicator.addEventListener('click', () => onStepTapped(index));
-        });
-
-        // Step 0 Inputs
-        productTypeSelect.addEventListener('change', (e) => {
-            productData.productType = e.target.value;
-            hideError('product-type');
-            // Reset variants when product type changes
-            productData.variants = [{ colors: [], sizes: [], price: '', promoCode: '' }];
-            renderProductVariantsStep(); // Re-render to reflect changes in variant section
-        });
-        productNameInput.addEventListener('input', (e) => { productData.name = e.target.value; hideError('product-name'); });
-        // Description content is now handled by Quill.js
-        quantityInput.addEventListener('input', (e) => { productData.quantity = e.target.value; hideError('quantity'); });
-        basePriceInput.addEventListener('input', (e) => { productData.price = e.target.value; hideError('base-price'); });
-
-        // Step 1 - Add Variant Button
-        addVariantButton.addEventListener('click', () => {
-            productData.variants.push({ colors: [], sizes: [], price: '', promoCode: '' });
-            renderProductVariantsStep();
-        });
-
-        // Step 2 Inputs and Image Upload
-        customOptionInput.addEventListener('input', (e) => { productData.customOption = e.target.value; });
-
-        selectImagesButton.addEventListener('click', () => {
-            imageUploadInput.click(); // Trigger file input click
-        });
-
-        imageUploadInput.addEventListener('change', (e) => {
-            const files = Array.from(e.target.files);
-            files.forEach(file => {
-                if (file.type.startsWith('image/')) {
-                    productData.images.push(file);
-                }
-            });
-            renderImagePreviews();
-            e.target.value = ''; // Clear the input so same file can be selected again
-        });
-
-        // Final Submit Button (on Step 3)
-        submitProductButtonFinal.addEventListener('click', addProduct);
-
         // --- API Call ---
 
         /**
@@ -1367,6 +1303,17 @@
 
         // --- Initial Render ---
         document.addEventListener('DOMContentLoaded', () => {
+            // --- Role Check ---
+            const userRole = localStorage.getItem('role');
+            const mainContainer = document.getElementById('main-container');
+            const accessDeniedMessage = document.getElementById('access-denied');
+            
+            if (userRole !== 'admin') {
+                mainContainer.style.display = 'none';
+                accessDeniedMessage.classList.remove('hidden');
+                return; // Stop further execution for non-admins
+            }
+
             // Initialize Quill editor
             quill = new Quill('#description-editor', {
                 theme: 'snow',
@@ -1387,6 +1334,75 @@
                 productData.description = quill.root.innerHTML;
                 hideError('description'); // Hide error when user starts typing
             });
+
+            // --- Event Listeners ---
+            languageToggle.addEventListener('click', () => {
+                languageDropdown.classList.toggle('hidden');
+            });
+
+            languageDropdown.querySelectorAll('button').forEach(button => {
+                button.addEventListener('click', (e) => {
+                    currentLocale = e.target.dataset.locale || e.target.closest('button').dataset.locale;
+                    updateLocalizedText();
+                    languageDropdown.classList.add('hidden');
+                    // Adjust text direction for Arabic
+                    if (currentLocale === 'ar') {
+                        document.body.style.direction = 'rtl';
+                        document.documentElement.lang = 'ar';
+                    } else {
+                        document.body.style.direction = 'ltr';
+                        document.documentElement.lang = 'en';
+                    }
+                });
+            });
+
+            // Stepper navigation buttons
+            nextButton.addEventListener('click', onStepContinue);
+            backButton.addEventListener('click', onStepCancel);
+
+            // Stepper indicator clicks
+            stepIndicators.forEach((indicator, index) => {
+                indicator.addEventListener('click', () => onStepTapped(index));
+            });
+
+            // Step 0 Inputs
+            productTypeSelect.addEventListener('change', (e) => {
+                productData.productType = e.target.value;
+                hideError('product-type');
+                // Reset variants when product type changes
+                productData.variants = [{ colors: [], sizes: [], price: '', promoCode: '' }];
+                renderProductVariantsStep(); // Re-render to reflect changes in variant section
+            });
+            productNameInput.addEventListener('input', (e) => { productData.name = e.target.value; hideError('product-name'); });
+            quantityInput.addEventListener('input', (e) => { productData.quantity = e.target.value; hideError('quantity'); });
+            basePriceInput.addEventListener('input', (e) => { productData.price = e.target.value; hideError('base-price'); });
+
+            // Step 1 - Add Variant Button
+            addVariantButton.addEventListener('click', () => {
+                productData.variants.push({ colors: [], sizes: [], price: '', promoCode: '' });
+                renderProductVariantsStep();
+            });
+
+            // Step 2 Inputs and Image Upload
+            customOptionInput.addEventListener('input', (e) => { productData.customOption = e.target.value; });
+
+            selectImagesButton.addEventListener('click', () => {
+                imageUploadInput.click(); // Trigger file input click
+            });
+
+            imageUploadInput.addEventListener('change', (e) => {
+                const files = Array.from(e.target.files);
+                files.forEach(file => {
+                    if (file.type.startsWith('image/')) {
+                        productData.images.push(file);
+                    }
+                });
+                renderImagePreviews();
+                e.target.value = ''; // Clear the input so same file can be selected again
+            });
+
+            // Final Submit Button (on Step 3)
+            submitProductButtonFinal.addEventListener('click', addProduct);
 
             updateLocalizedText();
             updateStepperUI(); // Initial stepper setup

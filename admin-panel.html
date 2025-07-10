@@ -15,7 +15,7 @@
     <style>
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #f3f4f6; /* Light gray background */
+            background-color: #f3f4f6;
         }
         /* Custom scrollbar for better aesthetics */
         ::-webkit-scrollbar {
@@ -47,6 +47,10 @@
 
         /* --- Modern Sidebar Styles --- */
         .sidebar {
+            position: fixed; /* Keep sidebar fixed on the screen */
+            top: 0;
+            left: 0;
+            z-index: 40;
             width: 250px;
             flex-shrink: 0;
             background-color: #111827; /* Tailwind gray-900 */
@@ -82,6 +86,7 @@
         .sidebar nav {
             flex-grow: 1;
             padding: 0 1rem; /* Horizontal padding for nav items */
+            overflow-y: auto; /* Add scroll for sidebar if content overflows */
         }
         
         .sidebar-button {
@@ -151,7 +156,7 @@
         }
     </style>
 </head>
-<body class="min-h-screen flex">
+<body class="min-h-screen">
     <!-- Sidebar -->
     <aside id="sidebar" class="sidebar">
         <div class="sidebar-header">
@@ -197,6 +202,11 @@
                 <i class="fas fa-cog fa-fw mr-3"></i>
                 <span>Site Config</span>
             </button>
+            <!-- NEW BUTTON: Facture -->
+            <button id="facture-nav-btn" class="sidebar-button">
+                <i class="fas fa-file-invoice fa-fw mr-3"></i>
+                <span>Facture</span>
+            </button>
         </nav>
         <div class="sidebar-footer">
             <button id="language-toggle" class="sidebar-button">
@@ -207,7 +217,7 @@
     </aside>
 
     <!-- Main Content Area -->
-    <div class="flex-1 flex flex-col transition-all duration-300 ease-in-out">
+    <div class="flex-1 flex flex-col transition-all duration-300 ease-in-out ml-[250px]">
         <!-- App Bar -->
         <header class="bg-white shadow-sm p-4 flex justify-end items-center rounded-b-lg">
              <!-- Header content can go here -->
@@ -333,7 +343,8 @@
                 'stockButton': 'Stock',
                 'pixelsButton': 'Pixels',
                 'feesDeliveryButton': 'Fees Delivery',
-                'siteConfigButton': 'Site Config', // New translation
+                'siteConfigButton': 'Site Config',
+                'factureButton': 'Invoice', // New translation
                 'selected': 'Selected',
                 'orderSummary': 'Order Summary',
                 'totalOrders': 'Total Orders',
@@ -372,7 +383,8 @@
                 'stockButton': 'المخزون',
                 'pixelsButton': 'البكسلات',
                 'feesDeliveryButton': 'رسوم التوصيل',
-                'siteConfigButton': 'إعدادات الموقع', // New translation
+                'siteConfigButton': 'إعدادات الموقع',
+                'factureButton': 'فاتورة', // New translation
                 'selected': 'المحدد',
                 'orderSummary': 'ملخص الطلبات',
                 'totalOrders': 'إجمالي الطلبات',
@@ -578,7 +590,9 @@
             document.getElementById('stock-nav-btn').querySelector('span').textContent = getTranslatedString('stockButton');
             document.getElementById('pixels-nav-btn').querySelector('span').textContent = getTranslatedString('pixelsButton');
             document.getElementById('fees-delivery-nav-btn').querySelector('span').textContent = getTranslatedString('feesDeliveryButton');
-            document.getElementById('site-config-nav-btn').querySelector('span').textContent = getTranslatedString('siteConfigButton'); // Translate new button
+            document.getElementById('site-config-nav-btn').querySelector('span').textContent = getTranslatedString('siteConfigButton');
+            document.getElementById('facture-nav-btn').querySelector('span').textContent = getTranslatedString('factureButton'); // Translate new button
+
 
             // Update filter button labels
             document.querySelector('#filter-today .filter-label').textContent = getTranslatedString('today');
@@ -955,6 +969,12 @@
                 updateSidebarActiveState('site-config-nav-btn'); // Update active state
             });
 
+            // Facture Navigation Button
+            document.getElementById('facture-nav-btn').addEventListener('click', () => {
+                window.location.href = 'facture.html'; // Navigate to facture.html
+                updateSidebarActiveState('facture-nav-btn'); // Update active state
+            });
+
             // Filter Buttons
             document.getElementById('filter-today').addEventListener('click', () => {
                 appState.selectedFilter = 'today';
@@ -1001,7 +1021,7 @@
                 if (appState.customEndDate && appState.customStartDate.getTime() > appState.customEndDate.getTime()) {
                     // Adjust end date if it's before start date
                     appState.customEndDate = appState.customStartDate;
-                    // Format back tocameraContinuous-MM-DD for input field
+                    // Format back to YYYY-MM-DD for input field
                     const adjustedEndDate = new Date(appState.customEndDate.getTime());
                     endDateInput.value = adjustedEndDate.toISOString().split('T')[0];
                 }
@@ -1019,7 +1039,7 @@
                 if (appState.customStartDate && appState.customEndDate.getTime() < appState.customStartDate.getTime()) {
                     // Adjust start date if it's after end date
                     appState.customStartDate = appState.customEndDate;
-                    // Format back to wymd-MM-DD for input field
+                    // Format back to YYYY-MM-DD for input field
                     const adjustedStartDate = new Date(appState.customStartDate.getTime());
                     startDateInput.value = adjustedStartDate.toISOString().split('T')[0];
                 }

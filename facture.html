@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestion des Documents Commerciaux</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts - Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Font Awesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css">
+    <!-- jsPDF and jsPDF-AutoTable for PDF Generation -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js"></script>
+
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f1f5f9; /* slate-100 */
+        }
+        .form-section {
+            background-color: white;
+            padding: 1.5rem;
+            border-radius: 0.75rem;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        }
+        .form-input {
+            width: 100%;
+            padding: 0.5rem 0.75rem;
+            border: 1px solid #cbd5e1; /* slate-300 */
+            border-radius: 0.375rem;
+            transition: border-color 0.2s, box-shadow 0.2s;
+            background-color: #f8fafc; /* slate-50 */
+        }
+        .form-input:focus {
+            outline: none;
+            border-color: #2563eb; /* blue-600 */
+            box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
+        }
+        .btn {
+            padding: 0.5rem 1rem;
+            border-radius: 0.375rem;
+            font-weight: 600;
+            transition: background-color 0.2s, transform 0.1s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+        .btn:hover {
+            transform: translateY(-1px);
+        }
+        .btn-primary {
+            background-color: #1d4ed8; /* blue-700 */
+            color: white;
+        }
+        .btn-primary:hover {
+            background-color: #1e40af; /* blue-800 */
+        }
+        .btn-secondary {
+            background-color: #e2e8f0; /* slate-200 */
+            color: #1e293b; /* slate-800 */
+        }
+        .btn-secondary:hover {
+            background-color: #cbd5e1; /* slate-300 */
+        }
+        .btn-danger {
+             background-color: #dc2626; /* red-600 */
+             color: white;
+        }
+        .btn-danger:hover {
+            background-color: #b91c1c; /* red-700 */
+        }
+        #toast {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 1rem 2rem;
+            border-radius: 0.5rem;
+            color: white;
+            font-weight: 500;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s, visibility 0.3s, transform 0.3s;
+            z-index: 1000;
+        }
+        #toast.show {
+            opacity: 1;
+            visibility: visible;
+            transform: translateX(-50%) translateY(0);
+        }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+
+    <div id="app-container" class="w-full max-w-7xl mx-auto">
+        <!-- Main content is rendered here by JS -->
+    </div>
+
+    <!-- Access Denied Message -->
+    <div id="access-denied" class="hidden text-center p-8 bg-white rounded-lg shadow-lg">
+        <i class="fas fa-exclamation-triangle text-5xl text-red-500 mb-4"></i>
+        <h2 class="text-2xl font-bold text-gray-800">Access Denied</h2>
+        <p class="text-gray-600 mt-2">You do not have permission to view this page. Please contact an administrator.</p>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast"></div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+             // --- Role Check ---
+            const userRole = localStorage.getItem('role');
+            const appContainer = document.getElementById('app-container');
+            const accessDeniedMessage = document.getElementById('access-denied');
+
+            if (userRole !== 'admin') {
+                appContainer.style.display = 'none';
+                accessDeniedMessage.classList.remove('hidden');
+                return; // Stop further execution for non-admins
+            }
+            
+            // --- State Management ---
+            let state = {};
+
+            // --- DOM Elements ---
+            const toastElement = document.getElementById('toast');
+
+            // --- Utility Functions ---
+            const showToast = (message, isError = false) => {
+                toastElement.textContent = message;
+                toastElement.className = `fixed bottom-5 left-1/2 -translate-x-1/2 px-6 py-3 rounded-lg shadow-lg text-white font-semibold ${isError ? 'bg-red-500' : 'bg-green-500'}`;
+                toastElement.classList.add('show');
+                setTimeout(() => {
+                    toastElement.classList.remove('show');
+                }, 3000);
+            };
+
+            const formatCurrency = (amount) => {
+                return new Intl.NumberFormat('fr-DZ', { style: 'currency', currency: 'DZD' }).format(amount);
+            };
+
+            // --- Data Persistence (localStorage) ---
+            const saveDocument = () => {
+                if (!state.docId) return;
+                const docKey = `${state.docType}_${state.docId}`;
+                localStorage.setItem(docKey, JSON.stringify(state));
+                
+                const idListKey = `ids_${state.docType}`;
+                let ids = JSON.parse(localStorage.getItem(idListKey) || '[]');
+                if (!ids.includes(state.docId)) {
+                    ids.push(state.docId);
+                    localStorage.setItem(idListKey, JSON.stringify(ids));
+                }
+                document.getElementById('last-saved-time').textContent = `Dernière sauvegarde: ${new Date().toLocaleTimeString()}`;
+            };
+
+            const loadDocument = (docId) => {
+                const docKey = `${state.docType}_${docId}`;
+                const savedData = localStorage.getItem(docKey);
+                if (savedData) {
+                    Object.assign(state, JSON.parse(savedData));
+                    render();
+                } else {
+                    showToast(`Document ${docId} not found.`, true);
+                }
+            };
+
+            const createNewDocument = () => {
+                const docType = state.docType; // Preserve current type
+                resetState();
+                state.docType = docType;
+                state.docId = `${docType.toUpperCase()}-${Date.now()}`;
+                render();
+                saveDocument();
+                showToast(`Nouveau document '${state.docId}' créé.`);
+            };
+
+            const deleteDocument = (docId) => {
+                 if (!confirm(`Voulez-vous vraiment supprimer le document "${docId}"?`)) return;
+                
+                const docKey = `${state.docType}_${docId}`;
+                localStorage.removeItem(docKey);
+
+                const idListKey = `ids_${state.docType}`;
+                let ids = JSON.parse(localStorage.getItem(idListKey) || '[]');
+                ids = ids.filter(id => id !== docId);
+                localStorage.setItem(idListKey, JSON.stringify(ids));
+
+                if (state.docId === docId) {
+                    createNewDocument();
+                } else {
+                    render(); // Re-render to update the list if it's open
+                }
+                showToast(`Document "${docId}" supprimé.`);
+            };
+
+            // --- Core Logic ---
+            const calculateTotals = () => {
+                state.subTotal = state.products.reduce((sum, p) => sum + (p.total || 0), 0);
+                state.tvaAmount = state.subTotal * state.tvaRate;
+                state.grandTotal = state.subTotal + state.tvaAmount;
+            };
+
+            const updateProduct = (index, field, value) => {
+                const product = state.products[index];
+                product[field] = value;
+                if (field === 'quantity' || field === 'unitPrice') {
+                    product.quantity = parseFloat(product.quantity) || 0;
+                    product.unitPrice = parseFloat(product.unitPrice) || 0;
+                    product.total = product.quantity * product.unitPrice;
+                }
+                calculateTotals();
+                renderProductTable();
+                renderTotals();
+                saveDocument();
+            };
+
+            const addProductRow = () => {
+                state.products.push({ description: '', quantity: 1, unitPrice: 0, total: 0 });
+                renderProductTable();
+                saveDocument();
+            };
+
+            const removeProductRow = (index) => {
+                state.products.splice(index, 1);
+                calculateTotals();
+                renderProductTable();
+                renderTotals();
+                saveDocument();
+            };
+            
+            // --- PDF Generation ---
+            const generatePDF = () => {
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF();
+
+                doc.setFont('Inter', 'bold');
+                doc.setFontSize(20);
+                doc.setTextColor('#1e3a8a'); // blue-800
+                doc.text(state.companyName.toUpperCase(), 14, 22);
+
+                doc.setFont('Inter', 'normal');
+                doc.setFontSize(10);
+                doc.setTextColor('#334155'); // slate-700
+                let y = 30;
+                doc.text(state.companyAddress, 14, y); y += 5;
+                doc.text(`Tel: ${state.companyPhone}`, 14, y); y += 5;
+                doc.text(`Email: ${state.companyEmail}`, 14, y); y += 5;
+                doc.text(`RC: ${state.companyRC}`, 14, y); y += 5;
+                doc.text(`NIF: ${state.companyNIF}`, 14, y);
+
+                doc.setFontSize(18);
+                doc.setFont('Inter', 'bold');
+                doc.text(state.docType.toUpperCase(), 200, 22, { align: 'right' });
+                doc.text(`N°: ${state.docId}`, 200, 30, { align: 'right' });
+
+                y = 60;
+                doc.setDrawColor('#94a3b8'); // slate-400
+                doc.line(14, y, 200, y); y += 10;
+
+                doc.setFontSize(14);
+                doc.text('Détails du Client:', 14, y); y += 7;
+                doc.setFontSize(10);
+                doc.text(`Nom: ${state.clientName}`, 14, y); y+=5;
+                doc.text(`Adresse: ${state.clientAddress}`, 14, y); y+=5;
+                doc.text(`Téléphone: ${state.clientPhone}`, 14, y); y+=5;
+                doc.text(`Email: ${state.clientEmail}`, 14, y); y+=10;
+
+                doc.text(`Date: ${state.docDate}`, 14, y);
+                doc.text(`Mode de Paiement: ${state.paymentMode}`, 100, y); y += 10;
+
+                const tableData = state.products.map(p => [
+                    p.description,
+                    p.quantity,
+                    formatCurrency(p.unitPrice),
+                    formatCurrency(p.total)
+                ]);
+
+                doc.autoTable({
+                    startY: y,
+                    head: [['Description', 'Qté', 'Prix Unitaire', 'Total']],
+                    body: tableData,
+                    theme: 'grid',
+                    headStyles: { fillColor: '#e2e8f0', textColor: '#1e293b' },
+                });
+                
+                y = doc.autoTable.previous.finalY + 15;
+
+                doc.setFontSize(12);
+                doc.setFont('Inter', 'bold');
+                doc.text(`Sous-total: ${formatCurrency(state.subTotal)}`, 200, y, { align: 'right' }); y += 7;
+                doc.text(`TVA (${(state.tvaRate * 100).toFixed(0)}%): ${formatCurrency(state.tvaAmount)}`, 200, y, { align: 'right' }); y += 7;
+                doc.setFontSize(16);
+                doc.setTextColor('#1d4ed8');
+                doc.text(`Total: ${formatCurrency(state.grandTotal)}`, 200, y, { align: 'right' });
+
+                doc.save(`${state.docType}_${state.docId}.pdf`);
+            };
+
+            // --- Render Functions ---
+            const renderProductTable = () => {
+                const tableBody = document.getElementById('product-table-body');
+                tableBody.innerHTML = state.products.map((p, i) => `
+                    <tr class="border-b">
+                        <td class="p-2"><input class="form-input" type="text" value="${p.description}" data-index="${i}" data-field="description"></td>
+                        <td class="p-2"><input class="form-input w-20 text-right" type="number" value="${p.quantity}" data-index="${i}" data-field="quantity"></td>
+                        <td class="p-2"><input class="form-input w-32 text-right" type="number" step="0.01" value="${p.unitPrice.toFixed(2)}" data-index="${i}" data-field="unitPrice"></td>
+                        <td class="p-2 text-right font-semibold">${formatCurrency(p.total)}</td>
+                        <td class="p-2 text-center">
+                            <button class="btn-danger p-2 rounded-full w-8 h-8" data-index="${i}" data-action="remove-product">
+                                <i class="fas fa-trash-alt"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `).join('');
+            };
+
+            const renderTotals = () => {
+                document.getElementById('subtotal').textContent = formatCurrency(state.subTotal);
+                document.getElementById('tva').textContent = formatCurrency(state.tvaAmount);
+                document.getElementById('grandtotal').textContent = formatCurrency(state.grandTotal);
+            };
+            
+            const renderSavedDocumentsList = () => {
+                const idListKey = `ids_${state.docType}`;
+                const ids = JSON.parse(localStorage.getItem(idListKey) || '[]');
+                const listContainer = document.getElementById('saved-documents-list');
+                if (ids.length === 0) {
+                    listContainer.innerHTML = `<p class="text-gray-500 italic">Aucun document de type '${state.docType}' trouvé.</p>`;
+                    return;
+                }
+                listContainer.innerHTML = ids.map(id => `
+                    <div class="flex justify-between items-center p-2 rounded-lg hover:bg-slate-100">
+                        <button class="font-medium text-blue-600" data-action="load-document" data-doc-id="${id}">${id}</button>
+                        <button class="btn-danger px-2 py-1 text-xs" data-action="delete-document" data-doc-id="${id}"><i class="fas fa-trash"></i></button>
+                    </div>
+                `).join('');
+            };
+
+            const render = () => {
+                appContainer.innerHTML = `
+                    <header class="bg-white p-4 rounded-lg shadow-md mb-6 flex justify-between items-center">
+                        <div>
+                            <h1 class="text-2xl font-bold text-slate-800">Gestion des Documents Commerciaux</h1>
+                            <p id="last-saved-time" class="text-xs text-slate-500">Dernière sauvegarde: ${state.lastSaved ? new Date(state.lastSaved).toLocaleTimeString() : 'Non sauvegardé'}</p>
+                        </div>
+                        <div class="flex gap-2">
+                            <button id="new-doc-btn" class="btn btn-secondary"><i class="fas fa-plus"></i> Nouveau</button>
+                            <button id="save-doc-btn" class="btn btn-secondary"><i class="fas fa-save"></i> Sauvegarder</button>
+                            <button id="print-pdf-btn" class="btn btn-primary"><i class="fas fa-print"></i> Imprimer PDF</button>
+                        </div>
+                    </header>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <div class="lg:col-span-2 space-y-6">
+                            <div class="form-section">
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <label class="font-semibold text-slate-600 block mb-1">Type de Document</label>
+                                        <select id="doc-type-select" class="form-input">
+                                            <option value="Facture" ${state.docType === 'Facture' ? 'selected' : ''}>Facture</option>
+                                            <option value="Bon de Commande" ${state.docType === 'Bon de Commande' ? 'selected' : ''}>Bon de Commande</option>
+                                            <option value="Devis" ${state.docType === 'Devis' ? 'selected' : ''}>Devis</option>
+                                        </select>
+                                    </div>
+                                     <div>
+                                        <label class="font-semibold text-slate-600 block mb-1">Numéro de Document</label>
+                                        <input type="text" class="form-input bg-slate-200" id="doc-id" value="${state.docId}" readonly>
+                                    </div>
+                                    <div>
+                                        <label class="font-semibold text-slate-600 block mb-1">Date</label>
+                                        <input type="date" class="form-input" id="doc-date" value="${state.docDate}">
+                                    </div>
+                                    <div>
+                                        <label class="font-semibold text-slate-600 block mb-1">Mode de Paiement</label>
+                                        <input type="text" class="form-input" id="payment-mode" value="${state.paymentMode}">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div class="form-section">
+                                    <h3 class="text-lg font-bold text-slate-700 mb-3 border-b pb-2">Infos Entreprise</h3>
+                                    <div class="space-y-2">
+                                        <input type="text" class="form-input" id="company-name" placeholder="Nom de l'entreprise" value="${state.companyName}">
+                                        <input type="text" class="form-input" id="company-address" placeholder="Adresse" value="${state.companyAddress}">
+                                        <input type="text" class="form-input" id="company-phone" placeholder="Téléphone" value="${state.companyPhone}">
+                                        <input type="email" class="form-input" id="company-email" placeholder="Email" value="${state.companyEmail}">
+                                        <input type="text" class="form-input" id="company-rc" placeholder="RC" value="${state.companyRC}">
+                                        <input type="text" class="form-input" id="company-nif" placeholder="NIF" value="${state.companyNIF}">
+                                    </div>
+                                </div>
+                                <div class="form-section">
+                                    <h3 class="text-lg font-bold text-slate-700 mb-3 border-b pb-2">Infos Client</h3>
+                                    <div class="space-y-2">
+                                        <input type="text" class="form-input" id="client-name" placeholder="Nom du client" value="${state.clientName}">
+                                        <input type="text" class="form-input" id="client-address" placeholder="Adresse" value="${state.clientAddress}">
+                                        <input type="text" class="form-input" id="client-phone" placeholder="Téléphone" value="${state.clientPhone}">
+                                        <input type="email" class="form-input" id="client-email" placeholder="Email" value="${state.clientEmail}">
+                                    </div>
+                                </div>
+                            </div>
+                             <div class="form-section">
+                                <h3 class="text-lg font-bold text-slate-700 mb-3">Articles</h3>
+                                <div class="overflow-x-auto">
+                                    <table class="w-full text-sm">
+                                        <thead>
+                                            <tr class="border-b">
+                                                <th class="p-2 text-left">Description</th>
+                                                <th class="p-2">Qté</th>
+                                                <th class="p-2">Prix Unitaire</th>
+                                                <th class="p-2">Total</th>
+                                                <th class="p-2">Action</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="product-table-body"></tbody>
+                                    </table>
+                                </div>
+                                <div class="flex justify-end mt-4">
+                                    <button id="add-product-btn" class="btn btn-secondary"><i class="fas fa-plus"></i> Ajouter Article</button>
+                                </div>
+                                <div class="flex justify-end mt-4 pt-4 border-t">
+                                    <div class="w-64 space-y-2 text-right">
+                                        <div class="flex justify-between"><span>Sous-total:</span><span id="subtotal" class="font-semibold"></span></div>
+                                        <div class="flex justify-between"><span>TVA (19%):</span><span id="tva" class="font-semibold"></span></div>
+                                        <div class="flex justify-between text-lg font-bold"><span>Total:</span><span id="grandtotal"></span></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-section">
+                             <h3 class="text-lg font-bold text-slate-700 mb-3 border-b pb-2">Documents Sauvegardés</h3>
+                             <div id="saved-documents-list" class="space-y-2"></div>
+                        </div>
+                    </div>
+                `;
+                renderProductTable();
+                renderTotals();
+                renderSavedDocumentsList();
+                attachEventListeners();
+            };
+
+            const attachEventListeners = () => {
+                // Header buttons
+                document.getElementById('new-doc-btn').addEventListener('click', createNewDocument);
+                document.getElementById('save-doc-btn').addEventListener('click', () => {
+                    saveDocument();
+                    showToast('Document sauvegardé!');
+                });
+                document.getElementById('print-pdf-btn').addEventListener('click', generatePDF);
+                
+                // Form inputs
+                document.getElementById('doc-type-select').addEventListener('change', e => {
+                    state.docType = e.target.value;
+                    createNewDocument(); // Create a new doc when type changes
+                });
+                ['doc-date', 'payment-mode', 'company-name', 'company-address', 'company-phone', 'company-email', 'company-rc', 'company-nif', 'client-name', 'client-address', 'client-phone', 'client-email'].forEach(id => {
+                    document.getElementById(id).addEventListener('change', e => {
+                        const key = id.replace(/-([a-z])/g, g => g[1].toUpperCase()); // a-b -> aB
+                        state[key] = e.target.value;
+                        saveDocument();
+                    });
+                });
+
+                // Product table events
+                document.getElementById('add-product-btn').addEventListener('click', addProductRow);
+                document.getElementById('product-table-body').addEventListener('change', e => {
+                    if (e.target.tagName === 'INPUT') {
+                        const index = e.target.dataset.index;
+                        const field = e.target.dataset.field;
+                        const value = e.target.type === 'number' ? parseFloat(e.target.value) : e.target.value;
+                        updateProduct(index, field, value);
+                    }
+                });
+                 document.getElementById('product-table-body').addEventListener('click', e => {
+                    const button = e.target.closest('button');
+                    if (button && button.dataset.action === 'remove-product') {
+                        removeProductRow(parseInt(button.dataset.index));
+                    }
+                });
+                
+                // Saved documents list events
+                document.getElementById('saved-documents-list').addEventListener('click', e => {
+                    const button = e.target.closest('button');
+                    if (!button) return;
+                    
+                    const action = button.dataset.action;
+                    const docId = button.dataset.docId;
+                    
+                    if (action === 'load-document') {
+                        loadDocument(docId);
+                    } else if (action === 'delete-document') {
+                        deleteDocument(docId);
+                    }
+                });
+            };
+
+            const resetState = () => {
+                state = {
+                    docType: 'Facture',
+                    docId: `FACTURE-${Date.now()}`,
+                    docDate: new Date().toISOString().split('T')[0],
+                    paymentMode: 'Virement bancaire',
+                    companyName: 'Votre Entreprise SARL',
+                    companyAddress: '123 Rue de l\'Exemple, Alger',
+                    companyPhone: '021 12 34 56',
+                    companyEmail: 'contact@votreentreprise.com',
+                    companyRC: 'RC: 1234567B',
+                    companyNIF: 'NIF: 000012345678900',
+                    clientName: 'Client Exemple SPA',
+                    clientAddress: '456 Avenue des Roses, Oran',
+                    clientPhone: '0770 98 76 54',
+                    clientEmail: 'client@exemple.com',
+                    products: [
+                        { description: 'Produit A', quantity: 2, unitPrice: 500, total: 1000 },
+                        { description: 'Service B', quantity: 1, unitPrice: 1200, total: 1200 },
+                    ],
+                    subTotal: 0,
+                    tvaRate: 0.19,
+                    tvaAmount: 0,
+                    grandTotal: 0,
+                    lastSaved: null
+                };
+                calculateTotals();
+            };
+
+            // --- Initialization ---
+            const lastDocType = localStorage.getItem('last_doc_type') || 'Facture';
+            const lastDocId = localStorage.getItem(`ids_${lastDocType}`)?.[0];
+            
+            resetState();
+            state.docType = lastDocType;
+            
+            if (lastDocId) {
+                loadDocument(lastDocId);
+            } else {
+                createNewDocument();
+            }
+        });
+    </script>
+</body>
+</html>

@@ -15,7 +15,7 @@
     <style>
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #f3f4f6;
+            background-color: #f3f4f6; /* Light gray background */
         }
         /* Custom scrollbar for better aesthetics */
         ::-webkit-scrollbar {
@@ -47,19 +47,62 @@
 
         /* --- Modern Sidebar Styles --- */
         .sidebar {
-            position: fixed; /* Keep sidebar fixed on the screen */
-            top: 0;
-            left: 0;
-            z-index: 40;
             width: 250px;
-            flex-shrink: 0;
             background-color: #111827; /* Tailwind gray-900 */
             color: #d1d5db; /* Tailwind gray-300 */
+            box-shadow: 2px 0 10px rgba(0,0,0,0.2);
+            /* Mobile-first: fixed, off-screen by default */
+            position: fixed;
+            top: 0;
+            left: 0;
             height: 100vh;
+            z-index: 50;
+            transform: translateX(-100%);
+            transition: transform 0.3s ease-in-out;
             display: flex;
             flex-direction: column;
-            padding: 1rem 0; /* Vertical padding only */
-            box-shadow: 2px 0 10px rgba(0,0,0,0.2);
+        }
+
+        .sidebar.open {
+            transform: translateX(0);
+        }
+
+        .sidebar-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 40;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease-in-out, visibility 0.3s ease-in-out;
+        }
+
+        .sidebar-overlay.show {
+            opacity: 1;
+            visibility: visible;
+        }
+        
+        /* On medium screens and up, make the sidebar static and visible */
+        @media (min-width: 768px) {
+            .sidebar {
+                position: static;
+                transform: translateX(0);
+                flex-shrink: 0;
+            }
+            .main-content-wrapper {
+                margin-left: 250px;
+            }
+            .sidebar-overlay {
+                display: none;
+            }
+        }
+        
+        /* Prevent body scroll when mobile menu is open */
+        body.no-scroll {
+            overflow: hidden;
         }
 
         .sidebar-header {
@@ -67,6 +110,7 @@
             margin-bottom: 1rem;
             display: flex;
             align-items: center;
+            justify-content: space-between;
         }
 
         .sidebar-header .logo-icon {
@@ -86,7 +130,7 @@
         .sidebar nav {
             flex-grow: 1;
             padding: 0 1rem; /* Horizontal padding for nav items */
-            overflow-y: auto; /* Add scroll for sidebar if content overflows */
+            overflow-y: auto;
         }
         
         .sidebar-button {
@@ -156,14 +200,23 @@
         }
     </style>
 </head>
-<body class="min-h-screen">
+<body class="min-h-screen flex">
+    <!-- Sidebar Overlay for mobile -->
+    <div id="sidebar-overlay" class="sidebar-overlay"></div>
+
     <!-- Sidebar -->
     <aside id="sidebar" class="sidebar">
         <div class="sidebar-header">
-            <div class="logo-icon">
-                <i class="fas fa-shield-alt"></i>
+            <div class="flex items-center">
+                <div class="logo-icon">
+                    <i class="fas fa-shield-alt"></i>
+                </div>
+                <h2 class="text-xl font-bold text-white">Admin</h2>
             </div>
-            <h2 class="text-xl font-bold text-white">Admin</h2>
+             <!-- Close button for mobile -->
+            <button id="close-sidebar-btn" class="md:hidden text-white text-2xl">
+                <i class="fas fa-times"></i>
+            </button>
         </div>
         <nav class="flex-1 space-y-2">
             <button id="dashboard-nav-btn" class="sidebar-button active">
@@ -202,7 +255,6 @@
                 <i class="fas fa-cog fa-fw mr-3"></i>
                 <span>Site Config</span>
             </button>
-            <!-- NEW BUTTON: Facture -->
             <button id="facture-nav-btn" class="sidebar-button">
                 <i class="fas fa-file-invoice fa-fw mr-3"></i>
                 <span>Facture</span>
@@ -213,14 +265,22 @@
                 <i class="fas fa-language fa-fw mr-3"></i>
                 <span id="language-text">English</span>
             </button>
+            <button id="logout-btn" class="sidebar-button mt-2 text-red-400 hover:bg-red-900/50 hover:text-white">
+                <i class="fas fa-sign-out-alt fa-fw mr-3"></i>
+                <span id="logout-text">Logout</span>
+            </button>
         </div>
     </aside>
 
     <!-- Main Content Area -->
-    <div class="flex-1 flex flex-col transition-all duration-300 ease-in-out ml-[250px]">
+    <div class="flex-1 flex flex-col main-content-wrapper">
         <!-- App Bar -->
-        <header class="bg-white shadow-sm p-4 flex justify-end items-center rounded-b-lg">
-             <!-- Header content can go here -->
+        <header class="bg-white shadow-sm p-4 flex justify-between md:justify-end items-center rounded-b-lg">
+             <!-- Hamburger menu for mobile -->
+            <button id="open-sidebar-btn" class="md:hidden text-gray-800 text-2xl">
+                <i class="fas fa-bars"></i>
+            </button>
+             <!-- Header content can go here if not part of the sidebar -->
         </header>
 
         <main class="flex-1 flex flex-col p-4 overflow-y-auto">
@@ -324,6 +384,7 @@
             stockFilter: '',
             orderPieChartInstance: null, // To store Chart.js instance
             activeSidebarButton: 'dashboard-nav-btn', // Keep track of the active button
+            isSidebarOpen: false // State for mobile sidebar
         };
 
         // Translations map
@@ -344,7 +405,8 @@
                 'pixelsButton': 'Pixels',
                 'feesDeliveryButton': 'Fees Delivery',
                 'siteConfigButton': 'Site Config',
-                'factureButton': 'Invoice', // New translation
+                'factureButton': 'Invoice',
+                'logoutButton': 'Logout',
                 'selected': 'Selected',
                 'orderSummary': 'Order Summary',
                 'totalOrders': 'Total Orders',
@@ -384,7 +446,8 @@
                 'pixelsButton': 'البكسلات',
                 'feesDeliveryButton': 'رسوم التوصيل',
                 'siteConfigButton': 'إعدادات الموقع',
-                'factureButton': 'فاتورة', // New translation
+                'factureButton': 'فاتورة',
+                'logoutButton': 'تسجيل الخروج',
                 'selected': 'المحدد',
                 'orderSummary': 'ملخص الطلبات',
                 'totalOrders': 'إجمالي الطلبات',
@@ -433,6 +496,22 @@
             renderApp(); // Re-render the entire app
             fetchOrders(); // Re-fetch orders to apply date formatting if needed
             fetchStockInfo(); // Re-fetch stock info
+        }
+        
+        // Function to toggle sidebar visibility on mobile
+        function toggleSidebar() {
+            appState.isSidebarOpen = !appState.isSidebarOpen;
+            const sidebar = document.getElementById('sidebar');
+            const sidebarOverlay = document.getElementById('sidebar-overlay');
+            if (appState.isSidebarOpen) {
+                sidebar.classList.add('open');
+                sidebarOverlay.classList.add('show');
+                document.body.classList.add('no-scroll');
+            } else {
+                sidebar.classList.remove('open');
+                sidebarOverlay.classList.remove('show');
+                document.body.classList.remove('no-scroll');
+            }
         }
 
         // --- API Fetching Functions ---
@@ -591,7 +670,8 @@
             document.getElementById('pixels-nav-btn').querySelector('span').textContent = getTranslatedString('pixelsButton');
             document.getElementById('fees-delivery-nav-btn').querySelector('span').textContent = getTranslatedString('feesDeliveryButton');
             document.getElementById('site-config-nav-btn').querySelector('span').textContent = getTranslatedString('siteConfigButton');
-            document.getElementById('facture-nav-btn').querySelector('span').textContent = getTranslatedString('factureButton'); // Translate new button
+            document.getElementById('facture-nav-btn').querySelector('span').textContent = getTranslatedString('factureButton');
+            document.getElementById('logout-btn').querySelector('span').textContent = getTranslatedString('logoutButton');
 
 
             // Update filter button labels
@@ -912,67 +992,91 @@
             fetchOrders();
             fetchStockInfo(); // Fetch stock info on load
 
+            // Sidebar toggle buttons
+            document.getElementById('open-sidebar-btn').addEventListener('click', toggleSidebar);
+            document.getElementById('close-sidebar-btn').addEventListener('click', toggleSidebar);
+            document.getElementById('sidebar-overlay').addEventListener('click', toggleSidebar);
+
             // Language Toggle
             document.getElementById('language-toggle').addEventListener('click', toggleLanguage);
+            
+            // Logout Button
+            document.getElementById('logout-btn').addEventListener('click', () => {
+                // Clear user session data from localStorage
+                localStorage.removeItem('token');
+                localStorage.removeItem('role');
+                localStorage.removeItem('id');
+                // Redirect to a login page (assuming it's named login.html)
+                window.location.href = 'login.html'; 
+            });
+
+            // Navigation buttons
+            document.querySelectorAll('.sidebar-button').forEach(button => {
+                button.addEventListener('click', () => {
+                    if (window.innerWidth < 768) { // Only close on mobile
+                        toggleSidebar();
+                    }
+                });
+            });
 
             // Orders Button
             document.getElementById('orders-button').addEventListener('click', () => {
-                window.location.href = 'orders-management-web.html'; // Navigate to the separate orders page
-                updateSidebarActiveState('orders-button'); // Update active state
+                window.location.href = 'orders-management-web.html';
+                updateSidebarActiveState('orders-button');
             });
 
             // Dashboard Navigation Button
             document.getElementById('dashboard-nav-btn').addEventListener('click', () => {
                 updateSidebarActiveState('dashboard-nav-btn');
-                // Since this is the main dashboard page, no navigation is needed.
+                // Could refresh or navigate to home if this wasn't the main page
             });
 
             // Add Product Navigation Button
             document.getElementById('add-product-nav-btn').addEventListener('click', () => {
-                window.location.href = 'addproduct.html'; // Navigate to addproduct.html
-                updateSidebarActiveState('add-product-nav-btn'); // Update active state
+                window.location.href = 'addproduct.html';
+                updateSidebarActiveState('add-product-nav-btn');
             });
 
             // All Products Navigation Button
             document.getElementById('all-products-nav-btn').addEventListener('click', () => {
-                window.location.href = 'products.html'; // Navigate to products.html
-                updateSidebarActiveState('all-products-nav-btn'); // Update active state
+                window.location.href = 'products.html';
+                updateSidebarActiveState('all-products-nav-btn');
             });
             
             // Admins Navigation Button
             document.getElementById('admins-nav-btn').addEventListener('click', () => {
-                window.location.href = 'admins.html'; // Navigate to admins.html
-                updateSidebarActiveState('admins-nav-btn'); // Update active state
+                window.location.href = 'admins.html';
+                updateSidebarActiveState('admins-nav-btn');
             });
 
             // Stock Navigation Button
             document.getElementById('stock-nav-btn').addEventListener('click', () => {
-                window.location.href = 'stock.html'; // Navigate to stock.html
-                updateSidebarActiveState('stock-nav-btn'); // Update active state
+                window.location.href = 'stock.html';
+                updateSidebarActiveState('stock-nav-btn');
             });
 
             // Pixels Navigation Button
             document.getElementById('pixels-nav-btn').addEventListener('click', () => {
-                window.location.href = 'pixels.html'; // Navigate to pixels.html
-                updateSidebarActiveState('pixels-nav-btn'); // Update active state
+                window.location.href = 'pixels.html';
+                updateSidebarActiveState('pixels-nav-btn');
             });
 
             // Fees Delivery Navigation Button
             document.getElementById('fees-delivery-nav-btn').addEventListener('click', () => {
-                window.location.href = 'fees.html'; // Navigate to fees.html
-                updateSidebarActiveState('fees-delivery-nav-btn'); // Update active state
+                window.location.href = 'fees.html';
+                updateSidebarActiveState('fees-delivery-nav-btn');
             });
             
             // Site Config Navigation Button
             document.getElementById('site-config-nav-btn').addEventListener('click', () => {
-                window.location.href = 'siteconfig.html'; // Navigate to siteconfig.html
-                updateSidebarActiveState('site-config-nav-btn'); // Update active state
+                window.location.href = 'siteconfig.html';
+                updateSidebarActiveState('site-config-nav-btn');
             });
 
             // Facture Navigation Button
             document.getElementById('facture-nav-btn').addEventListener('click', () => {
-                window.location.href = 'facture.html'; // Navigate to facture.html
-                updateSidebarActiveState('facture-nav-btn'); // Update active state
+                window.location.href = 'facture.html';
+                updateSidebarActiveState('facture-nav-btn');
             });
 
             // Filter Buttons
@@ -995,7 +1099,6 @@
             document.getElementById('filter-custom').addEventListener('click', () => {
                 appState.selectedFilter = 'custom';
                 updateFilterButtons();
-                // If custom dates are already set, re-fetch. Otherwise, wait for user input.
                 if (appState.customStartDate && appState.customEndDate) {
                     fetchOrders();
                 }
@@ -1014,14 +1117,11 @@
             const endDateInput = document.getElementById('end-date');
 
             startDateInput.addEventListener('change', (e) => {
-                // Parse as local date first to avoid timezone issues with date input
                 const localDate = new Date(e.target.value);
-                appState.customStartDate = new Date(Date.UTC(localDate.getFullYear(), localDate.getMonth(), localDate.getDate())); // Convert to UTC start of day
+                appState.customStartDate = new Date(Date.UTC(localDate.getFullYear(), localDate.getMonth(), localDate.getDate()));
                 
                 if (appState.customEndDate && appState.customStartDate.getTime() > appState.customEndDate.getTime()) {
-                    // Adjust end date if it's before start date
                     appState.customEndDate = appState.customStartDate;
-                    // Format back to YYYY-MM-DD for input field
                     const adjustedEndDate = new Date(appState.customEndDate.getTime());
                     endDateInput.value = adjustedEndDate.toISOString().split('T')[0];
                 }
@@ -1032,14 +1132,11 @@
             });
 
             endDateInput.addEventListener('change', (e) => {
-                // Parse as local date first
                 const localDate = new Date(e.target.value);
-                appState.customEndDate = new Date(Date.UTC(localDate.getFullYear(), localDate.getMonth(), localDate.getDate(), 23, 59, 59, 999)); // Convert to UTC end of day
+                appState.customEndDate = new Date(Date.UTC(localDate.getFullYear(), localDate.getMonth(), localDate.getDate(), 23, 59, 59, 999));
                 
                 if (appState.customStartDate && appState.customEndDate.getTime() < appState.customStartDate.getTime()) {
-                    // Adjust start date if it's after end date
                     appState.customStartDate = appState.customEndDate;
-                    // Format back to YYYY-MM-DD for input field
                     const adjustedStartDate = new Date(appState.customStartDate.getTime());
                     startDateInput.value = adjustedStartDate.toISOString().split('T')[0];
                 }

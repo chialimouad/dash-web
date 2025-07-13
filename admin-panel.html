@@ -16,6 +16,9 @@
         body {
             font-family: 'Inter', sans-serif;
             background-color: #f3f4f6;
+            /* To prevent the whole page from scrolling, we can constrain its height */
+            height: 100vh;
+            overflow-y: hidden;
         }
         /* Custom scrollbar for better aesthetics */
         ::-webkit-scrollbar {
@@ -47,7 +50,7 @@
 
         /* --- Modern Sidebar Styles --- */
         .sidebar {
-            position: fixed; /* Keep sidebar fixed on the screen */
+            position: fixed; /* This is the key property. It keeps the sidebar fixed on the screen */
             top: 0;
             left: 0;
             z-index: 40;
@@ -176,6 +179,17 @@
     </style>
 </head>
 <body class="min-h-screen">
+    <!-- 
+      PAGE STRUCTURE TEMPLATE:
+      To have a consistent sidebar on every page, you should use this same basic HTML structure for all your admin pages (e.g., orders.html, products.html, etc.).
+
+      1. Copy this entire file to create a new page (e.g., `products.html`).
+      2. Keep the <head>, <body>, <aside id="sidebar">, and the main <div> wrapper with the class "md:ml-[250px]".
+      3. Keep the <header> (the app bar).
+      4. **REPLACE THE CONTENT** inside the `<main>` tag with the specific content for your new page.
+      5. Keep the entire <script> block at the end, but you might need to modify the `DOMContentLoaded` event listener to fetch data relevant to the new page.
+    -->
+
     <!-- Sidebar -->
     <aside id="sidebar" class="sidebar">
         <div class="sidebar-header">
@@ -221,10 +235,13 @@
                 <i class="fas fa-cog fa-fw mr-3"></i>
                 <span>Site Config</span>
             </button>
-            <!-- NEW BUTTON: Facture -->
             <button id="facture-nav-btn" class="sidebar-button">
                 <i class="fas fa-file-invoice fa-fw mr-3"></i>
                 <span>Facture</span>
+            </button>
+            <button id="charges-nav-btn" class="sidebar-button">
+                <i class="fas fa-bolt fa-fw mr-3"></i>
+                <span>Charges</span>
             </button>
         </nav>
         <div class="sidebar-footer space-y-2">
@@ -232,7 +249,6 @@
                 <i class="fas fa-language fa-fw mr-3"></i>
                 <span id="language-text">English</span>
             </button>
-            <!-- NEW LOGOUT BUTTON -->
             <button id="logout-button" class="sidebar-button logout-button">
                 <i class="fas fa-sign-out-alt fa-fw mr-3"></i>
                 <span id="logout-text">Logout</span>
@@ -241,22 +257,25 @@
     </aside>
 
     <!-- Main Content Area -->
-    <div class="flex-1 flex flex-col transition-all duration-300 ease-in-out md:ml-[250px]">
+    <!-- CHANGE: Added h-screen and overflow-y-auto to make this container the scrolling element, not the body. -->
+    <div class="flex flex-col transition-all duration-300 ease-in-out md:ml-[250px] h-screen overflow-y-auto">
         <!-- Overlay for mobile when sidebar is open -->
         <div id="sidebar-overlay" class="fixed inset-0 bg-black bg-opacity-50 z-30 hidden md:hidden"></div>
         
         <!-- App Bar -->
-        <header class="bg-white shadow-sm p-4 flex justify-between items-center rounded-b-lg">
+        <!-- The 'sticky' class will now work relative to this scrolling container -->
+        <header class="bg-white shadow-sm p-4 flex justify-between items-center rounded-b-lg sticky top-0 z-20">
              <!-- Hamburger Menu (visible on mobile) -->
             <button id="menu-toggle" class="md:hidden text-gray-600 hover:text-gray-800 focus:outline-none">
                 <i class="fas fa-bars text-2xl"></i>
             </button>
              <!-- Spacer to allow content on the right -->
             <div class="flex-grow"></div>
-             <!-- Header content can go here -->
+             <!-- Header content can go here, like user profile, notifications etc. -->
         </header>
 
-        <main class="flex-1 flex flex-col p-4 overflow-y-auto">
+        <!-- CHANGE: Removed overflow-y-auto from main, as the parent now handles scrolling. -->
+        <main class="flex-1 flex flex-col p-4">
             <!-- Filter Section -->
             <section class="bg-gray-50 p-6 rounded-xl shadow-md mb-6">
                 <div class="flex justify-between items-center mb-4">
@@ -320,18 +339,18 @@
                     </div>
                 </div>
 
-                <!-- Stock Info Card -->
-                <div id="stock-info-card" class="dashboard-card bg-white p-6 rounded-xl shadow-lg flex flex-col">
+                <!-- Real Stock Info Card -->
+                <div id="real-stock-info-card" class="dashboard-card bg-white p-6 rounded-xl shadow-lg flex flex-col">
                     <div class="flex items-center mb-4">
-                        <i class="fas fa-store text-3xl text-gray-800"></i>
-                        <h3 class="text-2xl font-bold text-gray-800 ml-3">Stock Info</h3>
+                        <i class="fas fa-boxes-stacked text-3xl text-gray-800"></i>
+                        <h3 class="text-2xl font-bold text-gray-800 ml-3">Real Stock Info</h3>
                     </div>
                     <div class="mb-4">
-                        <input type="text" id="stock-search" placeholder="Search..." class="w-full p-3 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 bg-gray-50 text-gray-800">
+                        <input type="text" id="real-stock-search" placeholder="Search stock..." class="w-full p-3 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 bg-gray-50 text-gray-800">
                     </div>
                     <hr class="border-gray-300 mb-4">
-                    <div id="stock-info-content" class="flex-1 overflow-y-auto">
-                        Stock Information Placeholder
+                    <div id="real-stock-info-content" class="flex-1 overflow-y-auto">
+                        <!-- Real stock info will be loaded here -->
                     </div>
                 </div>
             </section>
@@ -342,19 +361,22 @@
         // Global state management
         const appState = {
             products: [],
-            stockInfos: [], // Placeholder for stock data
+            realStockInfos: [], // For the new real stock info
             totalOrders: 0,
             pendingOrders: 0,
             confirmedOrders: 0,
             tentativeOrders: 0,
             cancelledOrders: 0,
             isOrdersLoading: true,
+            isStockLoading: true, // Loading state for real stock
             orderErrorMessage: null,
+            stockErrorMessage: null, // Error message for real stock
             selectedFilter: 'month', // 'today', 'month', 'custom', 'all'
             customStartDate: null,
             customEndDate: null,
             isEnglish: true, // Default language
             stockFilter: '',
+            realStockFilter: '', // Filter for the new stock card
             orderPieChartInstance: null, // To store Chart.js instance
             activeSidebarButton: 'dashboard-nav-btn', // Keep track of the active button
         };
@@ -378,7 +400,8 @@
                 'feesDeliveryButton': 'Fees Delivery',
                 'siteConfigButton': 'Site Config',
                 'factureButton': 'Invoice',
-                'logoutButton': 'Logout', // New translation
+                'charges': 'Charges',
+                'logoutButton': 'Logout',
                 'selected': 'Selected',
                 'orderSummary': 'Order Summary',
                 'totalOrders': 'Total Orders',
@@ -387,15 +410,17 @@
                 'tentative': 'Tentative',
                 'cancelled': 'Cancelled',
                 'orderDistribution': 'Order Distribution',
-                'stockInfo': 'Stock Info',
+                'realStockInfo': 'Real Stock Info', // New translation
                 'searchHint': 'Search...',
+                'searchStockHint': 'Search stock...', // New translation
                 'noDataChart': 'No data available to show the chart.',
                 'failedToLoadOrders': 'Failed to load orders:',
+                'failedToLoadStock': 'Failed to load stock:', // New translation
                 'errorFetchingOrders': 'Error fetching orders:',
+                'errorFetchingStock': 'Error fetching stock:', // New translation
                 'retry': 'Retry',
                 'role': 'Role',
                 'unknown': 'Unknown',
-                'stockInformation': 'Stock Information Placeholder',
                 'language': 'English',
                 'From': 'From',
                 'To': 'To',
@@ -419,7 +444,8 @@
                 'feesDeliveryButton': 'رسوم التوصيل',
                 'siteConfigButton': 'إعدادات الموقع',
                 'factureButton': 'فاتورة',
-                'logoutButton': 'تسجيل الخروج', // New translation
+                'charges': 'الرسوم',
+                'logoutButton': 'تسجيل الخروج',
                 'selected': 'المحدد',
                 'orderSummary': 'ملخص الطلبات',
                 'totalOrders': 'إجمالي الطلبات',
@@ -428,15 +454,17 @@
                 'tentative': 'مؤقتة',
                 'cancelled': 'ملغاة',
                 'orderDistribution': 'توزيع الطلبات',
-                'stockInfo': 'معلومات المخزون',
+                'realStockInfo': 'معلومات المخزون الحقيقي', // New translation
                 'searchHint': 'بحث...',
+                'searchStockHint': 'بحث في المخزون...', // New translation
                 'noDataChart': 'لا توجد بيانات لعرض الرسم البياني.',
                 'failedToLoadOrders': 'فشل تحميل الطلبات:',
+                'failedToLoadStock': 'فشل تحميل المخزون:', // New translation
                 'errorFetchingOrders': 'خطأ في جلب الطلبات:',
+                'errorFetchingStock': 'خطأ في جلب المخزون:', // New translation
                 'retry': 'إعادة المحاولة',
                 'role': 'الدور',
                 'unknown': 'غير معروف',
-                'stockInformation': 'معلومات المخزون',
                 'language': 'العربية',
                 'From': 'من',
                 'To': 'إلى',
@@ -467,7 +495,7 @@
             appState.isEnglish = !appState.isEnglish;
             renderApp(); // Re-render the entire app
             fetchOrders(); // Re-fetch orders to apply date formatting if needed
-            fetchStockInfo(); // Re-fetch stock info
+            fetchRealStockData(); // Re-fetch stock info
         }
 
         // --- API Fetching Functions ---
@@ -496,32 +524,31 @@
             }
         }
 
-        async function fetchStockInfo() {
-            const contentDiv = document.getElementById('stock-info-content');
-            contentDiv.innerHTML = `
-                <div class="flex flex-col items-center justify-center h-full text-gray-600">
-                    <div class="animate-spin rounded-full h-12 w-12 border-4 border-indigo-500 border-t-transparent"></div>
-                    <p class="mt-4">${getTranslatedString('loadingStock')}</p>
-                </div>
-            `;
+        async function fetchRealStockData() {
+            appState.isStockLoading = true;
+            appState.stockErrorMessage = null;
+            renderRealStockInfoCard(); // Show loading state
+
             try {
-                // Placeholder for actual stock API call
-                // For now, simulate a delay and some dummy data
-                await new Promise(resolve => setTimeout(resolve, 1000));
-                appState.stockInfos = [
-                    { name: 'Product A', quantity: 150, lastUpdated: '2025-07-01' },
-                    { name: 'Product B', quantity: 75, lastUpdated: '2025-07-05' },
-                    { name: 'Product C', quantity: 200, lastUpdated: '2025-06-28' },
-                ];
-                renderStockInfoCard();
+                // Replace with your actual API endpoint for stock
+                const response = await fetch('https://sheeka.onrender.com/products'); 
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const fetchedProducts = await response.json();
+                // We'll map the product data to a simpler structure for the stock card
+                appState.realStockInfos = fetchedProducts.map(p => ({
+                    name: p.name,
+                    quantity: p.quantity,
+                    lastUpdated: p.updatedAt ? new Date(p.updatedAt).toLocaleDateString() : 'N/A'
+                }));
+                appState.isStockLoading = false;
             } catch (e) {
-                console.error('Error fetching stock info:', e);
-                contentDiv.innerHTML = `
-                    <div class="text-center text-red-500 p-4">
-                        <i class="fas fa-exclamation-circle text-4xl mb-2"></i>
-                        <p>${getTranslatedString('failedToLoadOrders')} ${e.message}</p>
-                    </div>
-                `;
+                appState.stockErrorMessage = `${getTranslatedString('errorFetchingStock')} ${e.message}`;
+                appState.isStockLoading = false;
+                console.error('Error fetching real stock info:', e);
+            } finally {
+                renderRealStockInfoCard(); // Update with data or error
             }
         }
 
@@ -627,8 +654,8 @@
             document.getElementById('pixels-nav-btn').querySelector('span').textContent = getTranslatedString('pixelsButton');
             document.getElementById('fees-delivery-nav-btn').querySelector('span').textContent = getTranslatedString('feesDeliveryButton');
             document.getElementById('site-config-nav-btn').querySelector('span').textContent = getTranslatedString('siteConfigButton');
-            document.getElementById('facture-nav-btn').querySelector('span').textContent = getTranslatedString('factureButton'); // Translate new button
-
+            document.getElementById('facture-nav-btn').querySelector('span').textContent = getTranslatedString('factureButton');
+            document.getElementById('charges-nav-btn').querySelector('span').textContent = getTranslatedString('charges');
 
             // Update filter button labels
             document.querySelector('#filter-today .filter-label').textContent = getTranslatedString('today');
@@ -643,10 +670,10 @@
             // Update card titles
             document.querySelector('#order-summary-card h3').textContent = getTranslatedString('orderSummary');
             document.querySelector('#order-distribution-card h3').textContent = getTranslatedString('orderDistribution');
-            document.querySelector('#stock-info-card h3').textContent = getTranslatedString('stockInfo');
+            document.querySelector('#real-stock-info-card h3').textContent = getTranslatedString('realStockInfo');
 
             // Update search hints
-            document.getElementById('stock-search').placeholder = getTranslatedString('searchHint');
+            document.getElementById('real-stock-search').placeholder = getTranslatedString('searchStockHint');
 
             // Apply active state to the currently selected sidebar button
             updateSidebarActiveState(appState.activeSidebarButton);
@@ -655,7 +682,7 @@
             updateFilterButtons();
             renderOrderSummaryCard();
             renderOrderPieChartCard();
-            renderStockInfoCard(); // Call to render stock info
+            renderRealStockInfoCard(); // Call to render new stock info card
             updateCustomDateRangeDisplay();
         }
 
@@ -879,15 +906,9 @@
             }
         }
 
-        function renderStockInfoCard() {
-            const contentDiv = document.getElementById('stock-info-content');
-            const filteredStock = appState.stockInfos.filter(item => {
-                const name = item.name ? item.name.toLowerCase() : '';
-                const filter = appState.stockFilter.toLowerCase();
-                return name.includes(filter);
-            });
-
-            if (appState.stockInfos.length === 0 && appState.stockFilter === '') {
+        function renderRealStockInfoCard() {
+            const contentDiv = document.getElementById('real-stock-info-content');
+            if (appState.isStockLoading) {
                 contentDiv.innerHTML = `
                     <div class="flex flex-col items-center justify-center h-full text-gray-600">
                         <div class="animate-spin rounded-full h-12 w-12 border-4 border-indigo-500 border-t-transparent"></div>
@@ -897,7 +918,27 @@
                 return;
             }
 
-            if (filteredStock.length === 0 && appState.stockFilter !== '') {
+            if (appState.stockErrorMessage) {
+                contentDiv.innerHTML = `
+                    <div class="text-center text-red-500 p-4">
+                        <i class="fas fa-exclamation-circle text-4xl mb-2"></i>
+                        <p>${getTranslatedString('failedToLoadStock')} ${appState.stockErrorMessage}</p>
+                        <button id="retry-stock" class="mt-4 bg-blue-500 text-white px-4 py-2 rounded-lg shadow hover:bg-blue-600 transition duration-300">
+                            <i class="fas fa-sync-alt mr-2"></i>${getTranslatedString('retry')}
+                        </button>
+                    </div>
+                `;
+                document.getElementById('retry-stock').onclick = fetchRealStockData;
+                return;
+            }
+
+            const filteredStock = appState.realStockInfos.filter(item => {
+                const name = item.name ? item.name.toLowerCase() : '';
+                const filter = appState.realStockFilter.toLowerCase();
+                return name.includes(filter);
+            });
+
+            if (filteredStock.length === 0) {
                 contentDiv.innerHTML = `
                     <div class="flex flex-col items-center justify-center h-full text-gray-600">
                         <i class="fas fa-info-circle text-4xl mb-3"></i>
@@ -907,26 +948,21 @@
                 return;
             }
 
-            if (filteredStock.length > 0) {
-                contentDiv.innerHTML = `
-                    <div class="w-full text-left">
-                        ${filteredStock.map(item => `
-                            <div class="bg-white p-3 rounded-lg shadow-sm mb-3 flex items-center justify-between">
-                                <div>
-                                    <h4 class="font-semibold text-gray-900">${item.name}</h4>
-                                    <p class="text-sm text-gray-600">Quantity: ${item.quantity}</p>
-                                    <p class="text-xs text-gray-500">Last Updated: ${item.lastUpdated}</p>
-                                </div>
-                                <i class="fas fa-cubes text-blue-500 text-2xl"></i>
+            contentDiv.innerHTML = `
+                <div class="w-full text-left">
+                    ${filteredStock.map(item => `
+                        <div class="bg-white p-3 rounded-lg shadow-sm mb-3 flex items-center justify-between">
+                            <div>
+                                <h4 class="font-semibold text-gray-900">${item.name}</h4>
+                                <p class="text-sm text-gray-600">Quantity: ${item.quantity}</p>
+                                <p class="text-xs text-gray-500">Last Updated: ${item.lastUpdated}</p>
                             </div>
-                        `).join('')}
-                    </div>
-                `;
-            } else {
-                contentDiv.innerHTML = `<p class="text-center text-gray-800 text-lg">${getTranslatedString('stockInformation')}</p>`;
-            }
+                            <i class="fas fa-cubes text-blue-500 text-2xl"></i>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
         }
-
 
         function updateCustomDateRangeDisplay() {
             const selectedDateRangeText = document.getElementById('selected-date-range');
@@ -946,7 +982,7 @@
             // Initial render and data fetch
             renderApp();
             fetchOrders();
-            fetchStockInfo(); // Fetch stock info on load
+            fetchRealStockData();
 
             // Responsive Sidebar Toggle
             const menuToggle = document.getElementById('menu-toggle');
@@ -980,64 +1016,42 @@
                 window.location.href = 'index.html';
             });
 
-            // Orders Button
+            // --- Sidebar Navigation ---
+            // This setup uses window.location.href to navigate. 
+            // For this to work, EACH target HTML file must have the same sidebar and header structure.
             document.getElementById('orders-button').addEventListener('click', () => {
-                window.location.href = 'orders-management-web.html'; // Navigate to the separate orders page
-                updateSidebarActiveState('orders-button'); // Update active state
+                window.location.href = 'orders-management-web.html';
             });
-
-            // Dashboard Navigation Button
             document.getElementById('dashboard-nav-btn').addEventListener('click', () => {
+                // Already on the dashboard, no navigation needed, but we ensure the state is correct.
                 updateSidebarActiveState('dashboard-nav-btn');
-                // Since this is the main dashboard page, no navigation is needed.
             });
-
-            // Add Product Navigation Button
             document.getElementById('add-product-nav-btn').addEventListener('click', () => {
-                window.location.href = 'addproduct.html'; // Navigate to addproduct.html
-                updateSidebarActiveState('add-product-nav-btn'); // Update active state
+                window.location.href = 'addproduct.html';
             });
-
-            // All Products Navigation Button
             document.getElementById('all-products-nav-btn').addEventListener('click', () => {
-                window.location.href = 'products.html'; // Navigate to products.html
-                updateSidebarActiveState('all-products-nav-btn'); // Update active state
+                window.location.href = 'products.html';
             });
-            
-            // Admins Navigation Button
             document.getElementById('admins-nav-btn').addEventListener('click', () => {
-                window.location.href = 'admins.html'; // Navigate to admins.html
-                updateSidebarActiveState('admins-nav-btn'); // Update active state
+                window.location.href = 'admins.html';
             });
-
-            // Stock Navigation Button
             document.getElementById('stock-nav-btn').addEventListener('click', () => {
-                window.location.href = 'stock.html'; // Navigate to stock.html
-                updateSidebarActiveState('stock-nav-btn'); // Update active state
+                window.location.href = 'stock.html';
             });
-
-            // Pixels Navigation Button
             document.getElementById('pixels-nav-btn').addEventListener('click', () => {
-                window.location.href = 'pixels.html'; // Navigate to pixels.html
-                updateSidebarActiveState('pixels-nav-btn'); // Update active state
+                window.location.href = 'pixels.html';
             });
-
-            // Fees Delivery Navigation Button
             document.getElementById('fees-delivery-nav-btn').addEventListener('click', () => {
-                window.location.href = 'fees.html'; // Navigate to fees.html
-                updateSidebarActiveState('fees-delivery-nav-btn'); // Update active state
+                window.location.href = 'fees.html';
             });
-            
-            // Site Config Navigation Button
             document.getElementById('site-config-nav-btn').addEventListener('click', () => {
-                window.location.href = 'siteconfig.html'; // Navigate to siteconfig.html
-                updateSidebarActiveState('site-config-nav-btn'); // Update active state
+                window.location.href = 'siteconfig.html';
             });
-
-            // Facture Navigation Button
             document.getElementById('facture-nav-btn').addEventListener('click', () => {
-                window.location.href = 'facture.html'; // Navigate to facture.html
-                updateSidebarActiveState('facture-nav-btn'); // Update active state
+                window.location.href = 'facture.html';
+            });
+            document.getElementById('charges-nav-btn').addEventListener('click', () => {
+                window.location.href = 'charges.html';
             });
 
             // Filter Buttons
@@ -1115,9 +1129,9 @@
             });
 
             // Stock Search
-            document.getElementById('stock-search').addEventListener('input', (e) => {
-                appState.stockFilter = e.target.value;
-                renderStockInfoCard();
+            document.getElementById('real-stock-search').addEventListener('input', (e) => {
+                appState.realStockFilter = e.target.value;
+                renderRealStockInfoCard();
             });
         });
     </script>

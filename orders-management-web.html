@@ -247,9 +247,16 @@
         </header>
 
         <main class="flex-1 p-4 overflow-y-auto">
-            <div class="mb-4">
-                <input type="text" id="searchInput" placeholder="Search by Phone Number or Name or Order ID" class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400">
+            <!-- *** MODIFICATION START: Added product name filter input *** -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <div>
+                    <input type="text" id="searchInput" placeholder="Search by Phone, Name, or Order ID" class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400">
+                </div>
+                <div>
+                    <input type="text" id="productNameInput" placeholder="Filter by Product Name" class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400">
+                </div>
             </div>
+            <!-- *** MODIFICATION END *** -->
 
             <div class="mb-4 overflow-x-auto whitespace-nowrap pb-2">
                 <div class="inline-flex space-x-2">
@@ -459,6 +466,9 @@
         const loginButton = document.getElementById('loginButton');
         const loginMessage = document.getElementById('loginMessage');
         const searchInput = document.getElementById('searchInput');
+        // *** MODIFICATION START: Get the new product name filter input ***
+        const productNameInput = document.getElementById('productNameInput');
+        // *** MODIFICATION END ***
         const ordersList = document.getElementById('ordersList');
         const loadingIndicator = document.getElementById('loadingIndicator');
         const noOrdersMessage = document.getElementById('noOrdersMessage');
@@ -1031,7 +1041,7 @@
         }
 
         /**
-         * Applies all active filters (date, status, search, and role-based assignment)
+         * Applies all active filters (date, status, search, product name, and role-based assignment)
          * and updates the displayed orders and status counts.
          */
         function applyAllFilters() {
@@ -1106,7 +1116,7 @@
                 filteredOrders = currentProcessedOrders;
             }
 
-            const searchTerm = searchInput.value.toLowerCase();
+            const searchTerm = searchInput.value.toLowerCase().trim();
             if (searchTerm.length > 0) {
                 filteredOrders = filteredOrders.filter(order => {
                     const phoneNumber = order.phoneNumber?.toString().toLowerCase() || '';
@@ -1115,6 +1125,22 @@
                     return phoneNumber.includes(searchTerm) || fullName.includes(searchTerm) || orderId.includes(searchTerm);
                 });
             }
+
+            // *** MODIFICATION START: Apply the product name filter ***
+            const productNameTerm = productNameInput.value.toLowerCase().trim();
+            if (productNameTerm.length > 0) {
+                filteredOrders = filteredOrders.filter(order => {
+                    // Check if order.products exists and is an array
+                    if (!order.products || !Array.isArray(order.products)) {
+                        return false;
+                    }
+                    // Use .some() to check if at least one product name matches
+                    return order.products.some(product =>
+                        product && product.name && product.name.toLowerCase().includes(productNameTerm)
+                    );
+                });
+            }
+            // *** MODIFICATION END ***
 
             renderOrders();
             sendOrderCountToBackend(filteredOrders.length);
@@ -1151,25 +1177,25 @@
 
             const assignedToHtml = order.assignedTo && order.assignedTo.name
                 ? `<div class="flex items-center text-sm text-gray-600 mt-1">
-                                <i class="fa-solid fa-user-check fa-fw mr-2 text-teal-600"></i>
-                                <span class="font-medium">Assigned To:</span>
-                                <span class="ml-1">${order.assignedTo.name}</span>
-                            </div>`
+                                        <i class="fa-solid fa-user-check fa-fw mr-2 text-teal-600"></i>
+                                        <span class="font-medium">Assigned To:</span>
+                                        <span class="ml-1">${order.assignedTo.name}</span>
+                                    </div>`
                 : '';
 
             const productsHtml = order.products && Array.isArray(order.products) && order.products.length > 0
                 ? order.products.map(p => `
-                    <div class="flex justify-between items-center py-1">
-                        <div class="text-gray-700">
-                            <span>${p.name || 'N/A'}</span>
-                            <span class="text-gray-500 text-xs ml-2">(x${p.quantity || 'N/A'})</span>
+                        <div class="flex justify-between items-center py-1">
+                            <div class="text-gray-700">
+                                <span>${p.name || 'N/A'}</span>
+                                <span class="text-gray-500 text-xs ml-2">(x${p.quantity || 'N/A'})</span>
+                            </div>
+                            <div class="text-gray-500 text-sm">
+                                ${p.color && p.color !== 'N/A' ? `<span class="mr-2">Color: ${p.color}</span>` : ''}
+                                ${p.size && p.size !== 'N/A' ? `<span>Size: ${p.size}</span>` : ''}
+                            </div>
                         </div>
-                        <div class="text-gray-500 text-sm">
-                            ${p.color && p.color !== 'N/A' ? `<span class="mr-2">Color: ${p.color}</span>` : ''}
-                            ${p.size && p.size !== 'N/A' ? `<span>Size: ${p.size}</span>` : ''}
-                        </div>
-                    </div>
-                `).join('')
+                    `).join('')
                 : '<p class="text-gray-500 text-sm">No products listed.</p>';
 
             const notesValue = orderNotes[order._id] || order.notes || '';
@@ -1197,7 +1223,7 @@
                         <p class="font-bold text-lg text-indigo-600 mt-1">DZD ${order.totalPrice || 'N/A'}</p>
                     </div>
                 </div>
-                
+               
                 <div class="text-center mt-2">
                     <button class="expand-toggle-btn text-gray-500 hover:text-indigo-600 transition-colors duration-200 p-2">
                         <i class="fa-solid fa-chevron-down text-sm"></i>
@@ -1221,7 +1247,7 @@
                             </div>
                         </div>
                     </div>
-                    
+                   
                     <div class="mt-4">
                         <label for="notes-${order._id}" class="block text-sm font-medium text-gray-700 mb-1">Agent Notes</label>
                         <textarea id="notes-${order._id}" class="w-full p-2 notes-input h-20" placeholder="Enter notes here...">${notesValue}</textarea>
@@ -1622,7 +1648,7 @@
 
             } catch (error) {
                 console.error('DEBUG: Dispatch Error:', error);
-                
+               
                 let userErrorMessage = error.message;
                 if (error.message.includes('Failed to fetch')) {
                     userErrorMessage = 'Could not connect to Yalitec server. Please check your internet connection and API endpoint.';
@@ -1778,7 +1804,7 @@
                 console.error('Error polling for new orders:', e);
             }
         }
-        
+       
         /**
          * Sends an email notification for a new order using EmailJS.
          * @param {Object} order The order data.
@@ -2044,7 +2070,7 @@
 
             // Directly check login status without splash screen
             checkLoginStatus();
-            
+           
             // Login Form Submission
             loginForm.addEventListener('submit', async (e) => {
                 e.preventDefault();
@@ -2193,6 +2219,9 @@
             });
 
             searchInput.addEventListener('input', applyAllFilters);
+            // *** MODIFICATION START: Add event listener for the new input ***
+            productNameInput.addEventListener('input', applyAllFilters);
+            // *** MODIFICATION END ***
 
             // AppBar Button Event Listeners
             yalitecSettingsBtn.addEventListener('click', promptForYalitecCredentials);

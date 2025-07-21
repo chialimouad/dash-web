@@ -12,11 +12,12 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.js"></script>
     <!-- Font Awesome for Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <!-- Markdown-it for rendering AI response -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/markdown-it/12.3.2/markdown-it.min.js"></script>
     <style>
         body {
             font-family: 'Inter', sans-serif;
             background-color: #f3f4f6;
-            /* To prevent the whole page from scrolling, we can constrain its height */
             height: 100vh;
             overflow-y: hidden;
         }
@@ -50,7 +51,7 @@
 
         /* --- Modern Sidebar Styles --- */
         .sidebar {
-            position: fixed; /* This is the key property. It keeps the sidebar fixed on the screen */
+            position: fixed;
             top: 0;
             left: 0;
             z-index: 40;
@@ -61,20 +62,18 @@
             height: 100vh;
             display: flex;
             flex-direction: column;
-            padding: 1rem 0; /* Vertical padding only */
+            padding: 1rem 0;
             box-shadow: 2px 0 10px rgba(0,0,0,0.2);
-            transition: transform 0.3s ease-in-out; /* Added for smooth transition */
-            transform: translateX(-100%); /* Hide sidebar by default on mobile */
+            transition: transform 0.3s ease-in-out;
+            transform: translateX(-100%);
         }
 
-        /* Show sidebar on medium screens and up */
         @media (min-width: 768px) {
             .sidebar {
                 transform: translateX(0);
             }
         }
 
-        /* This class will be toggled with JS to show the sidebar on mobile */
         .sidebar.open {
             transform: translateX(0);
         }
@@ -87,7 +86,7 @@
         }
 
         .sidebar-header .logo-icon {
-            background-color: #4f46e5; /* Indigo-600 */
+            background-color: #4f46e5;
             color: white;
             padding: 0.5rem;
             border-radius: 0.5rem;
@@ -95,15 +94,15 @@
         }
 
         .sidebar-header h2 {
-            font-size: 1.25rem; /* text-xl */
-            font-weight: 700; /* bold */
+            font-size: 1.25rem;
+            font-weight: 700;
             color: white;
         }
 
         .sidebar nav {
             flex-grow: 1;
-            padding: 0 1rem; /* Horizontal padding for nav items */
-            overflow-y: auto; /* Add scroll for sidebar if content overflows */
+            padding: 0 1rem;
+            overflow-y: auto;
         }
         
         .sidebar-button {
@@ -113,48 +112,46 @@
             padding: 0.75rem 1rem;
             border-radius: 0.5rem;
             background-color: transparent;
-            color: #d1d5db; /* gray-300 */
+            color: #d1d5db;
             font-weight: 500;
             transition: background-color 0.2s ease, color 0.2s ease;
-            position: relative; /* For the active indicator */
+            position: relative;
         }
 
         .sidebar-button:hover {
-            background-color: #1f2937; /* gray-800 */
+            background-color: #1f2937;
             color: white;
         }
 
         .sidebar-button.active {
-            background-color: #374151; /* gray-700 */
+            background-color: #374151;
             color: white;
-            font-weight: 600; /* semi-bold */
+            font-weight: 600;
         }
         
-        /* Active indicator bar */
         .sidebar-button.active::before {
             content: '';
             position: absolute;
-            left: -1rem; /* Position outside the button's padding */
+            left: -1rem;
             top: 20%;
             height: 60%;
             width: 4px;
-            background-color: #4f46e5; /* Indigo-600 */
+            background-color: #4f46e5;
             border-top-right-radius: 4px;
             border-bottom-right-radius: 4px;
         }
         
         .logout-button:hover {
-            background-color: #991b1b; /* red-800 */
+            background-color: #991b1b;
             color: white;
         }
 
         .sidebar-footer {
             padding: 1rem;
             margin-top: auto;
-            border-top: 1px solid #374151; /* gray-700 */
+            border-top: 1px solid #374151;
         }
 
-        /* Enhanced dashboard card styling */
         .dashboard-card {
             transition: transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
             border: 1px solid #e5e7eb;
@@ -165,7 +162,6 @@
             box-shadow: 0 15px 30px rgba(0,0,0,0.2);
         }
 
-        /* Filter buttons hover effect */
         .filter-button {
             transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out, background-color 0.2s ease-in-out;
         }
@@ -176,21 +172,27 @@
         .filter-button.active {
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
+        /* Styles for AI analysis card content */
+        #ai-analysis-content h3 {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: #1f2937;
+            margin-top: 0.75rem;
+        }
+        #ai-analysis-content ul {
+            list-style-type: none;
+            padding-left: 0;
+        }
+        #ai-analysis-content li {
+            margin-bottom: 0.5rem;
+            color: #4b5563;
+        }
+        #ai-analysis-content strong {
+            color: #111827;
+        }
     </style>
 </head>
 <body class="min-h-screen">
-    <!-- 
-      PAGE STRUCTURE TEMPLATE:
-      To have a consistent sidebar on every page, you should use this same basic HTML structure for all your admin pages (e.g., orders.html, products.html, etc.).
-
-      1. Copy this entire file to create a new page (e.g., `products.html`).
-      2. Keep the <head>, <body>, <aside id="sidebar">, and the main <div> wrapper with the class "md:ml-[250px]".
-      3. Keep the <header> (the app bar).
-      4. **REPLACE THE CONTENT** inside the `<main>` tag with the specific content for your new page.
-      5. Keep the entire <script> block at the end, but you might need to modify the `DOMContentLoaded` event listener to fetch data relevant to the new page.
-    -->
-
-    <!-- Sidebar -->
     <aside id="sidebar" class="sidebar">
         <div class="sidebar-header">
             <div class="logo-icon">
@@ -256,27 +258,17 @@
         </div>
     </aside>
 
-    <!-- Main Content Area -->
-    <!-- CHANGE: Added h-screen and overflow-y-auto to make this container the scrolling element, not the body. -->
     <div class="flex flex-col transition-all duration-300 ease-in-out md:ml-[250px] h-screen overflow-y-auto">
-        <!-- Overlay for mobile when sidebar is open -->
         <div id="sidebar-overlay" class="fixed inset-0 bg-black bg-opacity-50 z-30 hidden md:hidden"></div>
         
-        <!-- App Bar -->
-        <!-- The 'sticky' class will now work relative to this scrolling container -->
         <header class="bg-white shadow-sm p-4 flex justify-between items-center rounded-b-lg sticky top-0 z-20">
-             <!-- Hamburger Menu (visible on mobile) -->
             <button id="menu-toggle" class="md:hidden text-gray-600 hover:text-gray-800 focus:outline-none">
                 <i class="fas fa-bars text-2xl"></i>
             </button>
-             <!-- Spacer to allow content on the right -->
             <div class="flex-grow"></div>
-             <!-- Header content can go here, like user profile, notifications etc. -->
         </header>
 
-        <!-- CHANGE: Removed overflow-y-auto from main, as the parent now handles scrolling. -->
         <main class="flex-1 flex flex-col p-4">
-            <!-- Filter Section -->
             <section class="bg-gray-50 p-6 rounded-xl shadow-md mb-6">
                 <div class="flex justify-between items-center mb-4">
                     <h2 id="filter-orders-title" class="text-2xl font-bold text-gray-800">Filter Orders</h2>
@@ -315,20 +307,15 @@
 
             <hr class="border-gray-300 mb-6">
 
-            <!-- Main Content Grid -->
             <section id="dashboard-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-6 flex-1">
-                <!-- Order Summary Card -->
                 <div id="order-summary-card" class="dashboard-card bg-white p-6 rounded-xl shadow-lg flex flex-col">
                     <div class="flex items-center mb-4">
                         <i class="fas fa-list-alt text-3xl text-gray-800"></i>
                         <h3 class="text-2xl font-bold text-gray-800 ml-3">Order Summary</h3>
                     </div>
-                    <div id="order-summary-content" class="flex-1 flex items-center justify-center">
-                        <!-- Content will be loaded here -->
-                    </div>
+                    <div id="order-summary-content" class="flex-1 flex items-center justify-center"></div>
                 </div>
 
-                <!-- Order Distribution Card (Pie Chart) -->
                 <div id="order-distribution-card" class="dashboard-card bg-white p-6 rounded-xl shadow-lg flex flex-col">
                     <div class="flex items-center mb-4">
                         <i class="fas fa-chart-pie text-3xl text-gray-800"></i>
@@ -339,7 +326,6 @@
                     </div>
                 </div>
 
-                <!-- Real Stock Info Card -->
                 <div id="real-stock-info-card" class="dashboard-card bg-white p-6 rounded-xl shadow-lg flex flex-col">
                     <div class="flex items-center mb-4">
                         <i class="fas fa-boxes-stacked text-3xl text-gray-800"></i>
@@ -349,285 +335,246 @@
                         <input type="text" id="real-stock-search" placeholder="Search stock..." class="w-full p-3 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 bg-gray-50 text-gray-800">
                     </div>
                     <hr class="border-gray-300 mb-4">
-                    <div id="real-stock-info-content" class="flex-1 overflow-y-auto">
-                        <!-- Real stock info will be loaded here -->
+                    <div id="real-stock-info-content" class="flex-1 overflow-y-auto"></div>
+                </div>
+                
+                <div id="ai-analysis-card" class="dashboard-card bg-white p-6 rounded-xl shadow-lg flex flex-col md:col-span-2 lg:col-span-2 xl:col-span-3">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="flex items-center">
+                            <i class="fas fa-robot text-3xl text-indigo-600"></i>
+                            <h3 id="ai-analysis-title" class="text-2xl font-bold text-gray-800 ml-3">AI Performance Analysis</h3>
+                        </div>
+                        <button id="regenerate-ai-analysis" class="bg-indigo-100 text-indigo-700 px-3 py-1 rounded-lg text-sm font-semibold hover:bg-indigo-200 transition-colors">
+                            <i class="fas fa-sync-alt mr-2"></i>
+                            <span id="regenerate-text">Regenerate</span>
+                        </button>
                     </div>
+                    <div id="ai-analysis-content" class="flex-1 space-y-4"></div>
                 </div>
             </section>
         </main>
     </div>
 
     <script>
-        // Global state management
         const appState = {
             products: [],
-            realStockInfos: [], // For the new real stock info
+            realStockInfos: [],
             totalOrders: 0,
             pendingOrders: 0,
             confirmedOrders: 0,
             tentativeOrders: 0,
             cancelledOrders: 0,
             isOrdersLoading: true,
-            isStockLoading: true, // Loading state for real stock
+            isStockLoading: true,
             orderErrorMessage: null,
-            stockErrorMessage: null, // Error message for real stock
-            selectedFilter: 'month', // 'today', 'month', 'custom', 'all'
+            stockErrorMessage: null,
+            selectedFilter: 'month',
             customStartDate: null,
             customEndDate: null,
-            isEnglish: true, // Default language
+            isEnglish: true,
             stockFilter: '',
-            realStockFilter: '', // Filter for the new stock card
-            orderPieChartInstance: null, // To store Chart.js instance
-            activeSidebarButton: 'dashboard-nav-btn', // Keep track of the active button
+            realStockFilter: '',
+            orderPieChartInstance: null,
+            activeSidebarButton: 'dashboard-nav-btn',
+            isAIAnalysisLoading: true,
+            aiAnalysisResult: null,
+            aiAnalysisError: null,
         };
 
-        // Translations map
         const translations = {
             'en': {
-                'adminPanelTitle': 'Admin Panel',
-                'filterOrders': 'Filter Orders',
-                'today': 'Today',
-                'thisMonth': 'This Month',
-                'customRange': 'Custom Range',
-                'allOrders': 'All Orders',
-                'ordersButton': 'Orders',
-                'dashboardButton': 'Dashboard',
-                'addProductButton': 'Add Product',
-                'allProductsButton': 'All Products',
-                'adminsButton': 'Admins',
-                'stockButton': 'Stock',
-                'pixelsButton': 'Pixels',
-                'feesDeliveryButton': 'Fees Delivery',
-                'siteConfigButton': 'Site Config',
-                'factureButton': 'Invoice',
-                'charges': 'Charges',
-                'logoutButton': 'Logout',
-                'selected': 'Selected',
-                'orderSummary': 'Order Summary',
-                'totalOrders': 'Total Orders',
-                'pending': 'Pending',
-                'confirmed': 'Confirmed',
-                'tentative': 'Tentative',
-                'cancelled': 'Cancelled',
-                'orderDistribution': 'Order Distribution',
-                'realStockInfo': 'Real Stock Info', // New translation
-                'searchHint': 'Search...',
-                'searchStockHint': 'Search stock...', // New translation
-                'noDataChart': 'No data available to show the chart.',
-                'failedToLoadOrders': 'Failed to load orders:',
-                'failedToLoadStock': 'Failed to load stock:', // New translation
-                'errorFetchingOrders': 'Error fetching orders:',
-                'errorFetchingStock': 'Error fetching stock:', // New translation
-                'retry': 'Retry',
-                'role': 'Role',
-                'unknown': 'Unknown',
-                'language': 'English',
-                'From': 'From',
-                'To': 'To',
-                'noStockFound': 'No stock items found matching your search.',
-                'loadingStock': 'Loading stock info...'
+                'adminPanelTitle': 'Admin Panel', 'filterOrders': 'Filter Orders', 'today': 'Today', 'thisMonth': 'This Month', 'customRange': 'Custom Range', 'allOrders': 'All Orders', 'ordersButton': 'Orders', 'dashboardButton': 'Dashboard', 'addProductButton': 'Add Product', 'allProductsButton': 'All Products', 'adminsButton': 'Admins', 'stockButton': 'Stock', 'pixelsButton': 'Pixels', 'feesDeliveryButton': 'Fees Delivery', 'siteConfigButton': 'Site Config', 'factureButton': 'Invoice', 'charges': 'Charges', 'logoutButton': 'Logout', 'selected': 'Selected', 'orderSummary': 'Order Summary', 'totalOrders': 'Total Orders', 'pending': 'Pending', 'confirmed': 'Confirmed', 'tentative': 'Tentative', 'cancelled': 'Cancelled', 'orderDistribution': 'Order Distribution', 'realStockInfo': 'Real Stock Info', 'searchHint': 'Search...', 'searchStockHint': 'Search stock...', 'noDataChart': 'No data available to show the chart.', 'failedToLoadOrders': 'Failed to load orders:', 'failedToLoadStock': 'Failed to load stock:', 'errorFetchingOrders': 'Error fetching orders:', 'errorFetchingStock': 'Error fetching stock:', 'retry': 'Retry', 'role': 'Role', 'unknown': 'Unknown', 'language': 'English', 'From': 'From', 'To': 'To', 'noStockFound': 'No stock items found matching your search.', 'loadingStock': 'Loading stock info...',
+                'aiPerformanceAnalysis': 'AI Performance Analysis', 'regenerate': 'Regenerate', 'loadingAnalysis': 'Generating AI analysis...', 'errorAnalysis': 'Could not generate AI analysis.',
             },
             'ar': {
-                'adminPanelTitle': 'لوحة التحكم',
-                'filterOrders': 'تصفية الطلبات',
-                'today': 'اليوم',
-                'thisMonth': 'هذا الشهر',
-                'customRange': 'نطاق مخصص',
-                'allOrders': 'جميع الطلبات',
-                'ordersButton': 'الطلبات',
-                'dashboardButton': 'لوحة القيادة',
-                'addProductButton': 'إضافة منتج',
-                'allProductsButton': 'جميع المنتجات',
-                'adminsButton': 'المسؤولون',
-                'stockButton': 'المخزون',
-                'pixelsButton': 'البكسلات',
-                'feesDeliveryButton': 'رسوم التوصيل',
-                'siteConfigButton': 'إعدادات الموقع',
-                'factureButton': 'فاتورة',
-                'charges': 'الرسوم',
-                'logoutButton': 'تسجيل الخروج',
-                'selected': 'المحدد',
-                'orderSummary': 'ملخص الطلبات',
-                'totalOrders': 'إجمالي الطلبات',
-                'pending': 'معلقة',
-                'confirmed': 'مؤكدة',
-                'tentative': 'مؤقتة',
-                'cancelled': 'ملغاة',
-                'orderDistribution': 'توزيع الطلبات',
-                'realStockInfo': 'معلومات المخزون الحقيقي', // New translation
-                'searchHint': 'بحث...',
-                'searchStockHint': 'بحث في المخزون...', // New translation
-                'noDataChart': 'لا توجد بيانات لعرض الرسم البياني.',
-                'failedToLoadOrders': 'فشل تحميل الطلبات:',
-                'failedToLoadStock': 'فشل تحميل المخزون:', // New translation
-                'errorFetchingOrders': 'خطأ في جلب الطلبات:',
-                'errorFetchingStock': 'خطأ في جلب المخزون:', // New translation
-                'retry': 'إعادة المحاولة',
-                'role': 'الدور',
-                'unknown': 'غير معروف',
-                'language': 'العربية',
-                'From': 'من',
-                'To': 'إلى',
-                'noStockFound': 'لم يتم العثور على عناصر مخزون مطابقة لبحثك.',
-                'loadingStock': 'جاري تحميل معلومات المخزون...'
+                'adminPanelTitle': 'لوحة التحكم', 'filterOrders': 'تصفية الطلبات', 'today': 'اليوم', 'thisMonth': 'هذا الشهر', 'customRange': 'نطاق مخصص', 'allOrders': 'جميع الطلبات', 'ordersButton': 'الطلبات', 'dashboardButton': 'لوحة القيادة', 'addProductButton': 'إضافة منتج', 'allProductsButton': 'جميع المنتجات', 'adminsButton': 'المسؤولون', 'stockButton': 'المخزون', 'pixelsButton': 'البكسلات', 'feesDeliveryButton': 'رسوم التوصيل', 'siteConfigButton': 'إعدادات الموقع', 'factureButton': 'فاتورة', 'charges': 'الرسوم', 'logoutButton': 'تسجيل الخروج', 'selected': 'المحدد', 'orderSummary': 'ملخص الطلبات', 'totalOrders': 'إجمالي الطلبات', 'pending': 'معلقة', 'confirmed': 'مؤكدة', 'tentative': 'مؤقتة', 'cancelled': 'ملغاة', 'orderDistribution': 'توزيع الطلبات', 'realStockInfo': 'معلومات المخزون الحقيقي', 'searchHint': 'بحث...', 'searchStockHint': 'بحث في المخزون...', 'noDataChart': 'لا توجد بيانات لعرض الرسم البياني.', 'failedToLoadOrders': 'فشل تحميل الطلبات:', 'failedToLoadStock': 'فشل تحميل المخزون:', 'errorFetchingOrders': 'خطأ في جلب الطلبات:', 'errorFetchingStock': 'خطأ في جلب المخزون:', 'retry': 'إعادة المحاولة', 'role': 'الدور', 'unknown': 'غير معروف', 'language': 'العربية', 'From': 'من', 'To': 'إلى', 'noStockFound': 'لم يتم العثور على عناصر مخزون مطابقة لبحثك.', 'loadingStock': 'جاري تحميل معلومات المخزون...',
+                'aiPerformanceAnalysis': 'تحليل الأداء بالذكاء الاصطناعي', 'regenerate': 'إعادة إنشاء', 'loadingAnalysis': 'جاري إنشاء تحليل الذكاء الاصطناعي...', 'errorAnalysis': 'تعذر إنشاء تحليل الذكاء الاصطناعي.',
             },
         };
 
-        // Helper to get translated string
         function getTranslatedString(key) {
             return translations[appState.isEnglish ? 'en' : 'ar'][key] || key;
         }
 
-        // Function to update sidebar active states
-        function updateSidebarActiveState(activeButtonId) {
-            document.querySelectorAll('.sidebar-button').forEach(button => {
-                button.classList.remove('active');
-            });
-            const activeButton = document.getElementById(activeButtonId);
-            if (activeButton) {
-                activeButton.classList.add('active');
-                appState.activeSidebarButton = activeButtonId; // Update state
+        async function fetchAllDataAndAnalyze() {
+            appState.isOrdersLoading = true;
+            appState.isStockLoading = true;
+            appState.isAIAnalysisLoading = true;
+            renderAllCards();
+
+            await Promise.all([fetchOrders(), fetchRealStockData()]);
+
+            if (!appState.orderErrorMessage && !appState.stockErrorMessage) {
+                await fetchAIAnalysis();
+            } else {
+                appState.isAIAnalysisLoading = false;
+                appState.aiAnalysisError = getTranslatedString('errorAnalysis');
+                renderAIAnalysisCard();
             }
         }
-
-        // Function to toggle language
-        function toggleLanguage() {
-            appState.isEnglish = !appState.isEnglish;
-            renderApp(); // Re-render the entire app
-            fetchOrders(); // Re-fetch orders to apply date formatting if needed
-            fetchRealStockData(); // Re-fetch stock info
-        }
-
-        // --- API Fetching Functions ---
 
         async function fetchOrders() {
             appState.isOrdersLoading = true;
             appState.orderErrorMessage = null;
-            renderOrderSummaryCard(); // Show loading state
-            renderOrderPieChartCard(); // Show loading state
-
             try {
                 const response = await fetch('https://sheeka.onrender.com/orders');
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
                 const fetchedOrders = await response.json();
                 processOrderData(fetchedOrders);
-                appState.isOrdersLoading = false;
             } catch (e) {
                 appState.orderErrorMessage = `${getTranslatedString('errorFetchingOrders')} ${e.message}`;
-                appState.isOrdersLoading = false;
                 console.error('Error fetching orders:', e);
             } finally {
-                renderOrderSummaryCard(); // Update with data or error
-                renderOrderPieChartCard(); // Update with data or error
+                appState.isOrdersLoading = false;
+                renderOrderSummaryCard();
+                renderOrderPieChartCard();
             }
         }
 
         async function fetchRealStockData() {
             appState.isStockLoading = true;
             appState.stockErrorMessage = null;
-            renderRealStockInfoCard(); // Show loading state
-
             try {
-                // Replace with your actual API endpoint for stock
                 const response = await fetch('https://sheeka.onrender.com/products'); 
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
                 const fetchedProducts = await response.json();
-                // We'll map the product data to a simpler structure for the stock card
                 appState.realStockInfos = fetchedProducts.map(p => ({
                     name: p.name,
                     quantity: p.quantity,
                     lastUpdated: p.updatedAt ? new Date(p.updatedAt).toLocaleDateString() : 'N/A'
                 }));
-                appState.isStockLoading = false;
             } catch (e) {
                 appState.stockErrorMessage = `${getTranslatedString('errorFetchingStock')} ${e.message}`;
-                appState.isStockLoading = false;
                 console.error('Error fetching real stock info:', e);
             } finally {
-                renderRealStockInfoCard(); // Update with data or error
+                appState.isStockLoading = false;
+                renderRealStockInfoCard();
             }
         }
 
-        // --- Order Processing and Filtering ---
+        async function fetchAIAnalysis() {
+            appState.isAIAnalysisLoading = true;
+            appState.aiAnalysisError = null;
+            appState.aiAnalysisResult = null;
+            renderAIAnalysisCard();
+
+            const stockSummary = appState.realStockInfos
+                .sort((a, b) => b.quantity - a.quantity)
+                .slice(0, 5)
+                .map(p => `- ${p.name} (Quantity: ${p.quantity})`)
+                .join('\n');
+            
+            let filterPeriod;
+            if (appState.selectedFilter === 'custom' && appState.customStartDate && appState.customEndDate) {
+                const start = appState.customStartDate.toLocaleDateString();
+                const end = appState.customEndDate.toLocaleDateString();
+                filterPeriod = `Custom Range from ${start} to ${end}`;
+            } else {
+                filterPeriod = getTranslatedString(appState.selectedFilter);
+            }
+
+            const prompt = `
+                You are a professional e-commerce business analyst. Analyze the following sales and stock data for an online store and provide actionable advice to improve sales.
+                The analysis is for the period: ${filterPeriod}.
+                Current Language for response: ${appState.isEnglish ? 'English' : 'Arabic'}.
+
+                Data Summary:
+                - Total Orders: ${appState.totalOrders}
+                - Confirmed Orders: ${appState.confirmedOrders}
+                - Pending Orders: ${appState.pendingOrders}
+                - Cancelled Orders: ${appState.cancelledOrders}
+                - Top 5 products with the most stock:\n${stockSummary || 'N/A'}
+
+                Based on this data, provide a concise analysis with 3 key actionable recommendations.
+                Structure your response in Markdown EXACTLY as follows:
+
+                ### Key Observation
+                A brief, one-sentence observation about the overall situation.
+
+                ### Actionable Recommendations
+                - **Recommendation Title 1:** A short, actionable recommendation text.
+                - **Recommendation Title 2:** A short, actionable recommendation text.
+                - **Recommendation Title 3:** A short, actionable recommendation text.
+
+                Keep the language clear, direct, and professional. Do not add any extra comments.
+            `;
+            
+            try {
+                const chatHistory = [{ role: "user", parts: [{ text: prompt }] }];
+                const payload = { contents: chatHistory };
+                const apiKey = ""; 
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+                
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) {
+                    const errorBody = await response.text();
+                    throw new Error(`API error! status: ${response.status}, body: ${errorBody}`);
+                }
+
+                const result = await response.json();
+                
+                if (result.candidates && result.candidates.length > 0 && result.candidates[0].content) {
+                    const text = result.candidates[0].content.parts[0].text;
+                    appState.aiAnalysisResult = text;
+                } else {
+                    throw new Error("No content received from AI. Response might be blocked.");
+                }
+
+            } catch (e) {
+                console.error("Error fetching AI analysis:", e);
+                appState.aiAnalysisError = `${getTranslatedString('errorAnalysis')}`;
+            } finally {
+                appState.isAIAnalysisLoading = false;
+                renderAIAnalysisCard();
+            }
+        }
 
         function processOrderData(ordersList) {
-            let pending = 0;
-            let confirmed = 0;
-            let tentative = 0;
-            let cancelled = 0;
-            let filteredOrders = [];
-
+            let pending = 0, confirmed = 0, tentative = 0, cancelled = 0;
             const nowUtc = new Date();
-            // Normalize filter boundaries to start of day in UTC
             const todayUtcStart = new Date(Date.UTC(nowUtc.getUTCFullYear(), nowUtc.getUTCMonth(), nowUtc.getUTCDate()));
             const thisMonthUtcStart = new Date(Date.UTC(nowUtc.getUTCFullYear(), nowUtc.getUTCMonth(), 1));
 
-            for (const order of ordersList) {
+            const filteredOrders = ordersList.filter(order => {
                 let createdAt;
                 try {
-                    const createdAtString = order['createdAt']?.toString();
-                    if (createdAtString) {
-                        createdAt = new Date(createdAtString); // Date.parse handles ISO 8601
-                        if (isNaN(createdAt.getTime())) { // Check for invalid date
-                            throw new Error('Invalid date string');
-                        }
-                    } else {
-                        createdAt = new Date(0); // Epoch 0 UTC
-                        console.warn(`Warning: createdAt is not a valid string or is null for order: ${order['_id'] || 'unknown_id'}. Treating as UTC epoch 0.`);
-                    }
-                } catch (e) {
-                    createdAt = new Date(0); // Epoch 0 UTC
-                    console.error(`Error parsing createdAt date: ${e} for order: ${order['_id'] || 'unknown_id'}. Treating as UTC epoch 0.`);
+                    createdAt = new Date(order['createdAt']?.toString());
+                    if (isNaN(createdAt.getTime())) throw new Error('Invalid date');
+                } catch {
+                    return false;
                 }
 
-                let matchesFilter = false;
                 switch (appState.selectedFilter) {
                     case 'today':
-                        matchesFilter = createdAt.getUTCDate() === todayUtcStart.getUTCDate() &&
-                                        createdAt.getUTCMonth() === todayUtcStart.getUTCMonth() &&
-                                        createdAt.getUTCFullYear() === todayUtcStart.getUTCFullYear();
-                        break;
+                        return createdAt >= todayUtcStart;
                     case 'month':
-                        matchesFilter = createdAt.getUTCMonth() === thisMonthUtcStart.getUTCMonth() &&
-                                        createdAt.getUTCFullYear() === thisMonthUtcStart.getUTCFullYear();
-                        break;
+                        return createdAt >= thisMonthUtcStart;
                     case 'custom':
                         if (appState.customStartDate && appState.customEndDate) {
-                            // Ensure custom dates are also treated as UTC start/end of day for comparison
-                            const customStartUtc = new Date(Date.UTC(appState.customStartDate.getFullYear(), appState.customStartDate.getMonth(), appState.customStartDate.getDate()));
-                            const customEndUtc = new Date(Date.UTC(appState.customEndDate.getFullYear(), appState.customEndDate.getMonth(), appState.customEndDate.getDate(), 23, 59, 59, 999));
-
-                            matchesFilter = (createdAt.getTime() >= customStartUtc.getTime() && createdAt.getTime() <= customEndUtc.getTime());
+                            const start = appState.customStartDate;
+                            const end = new Date(Date.UTC(appState.customEndDate.getUTCFullYear(), appState.customEndDate.getUTCMonth(), appState.customEndDate.getUTCDate(), 23, 59, 59, 999));
+                            return createdAt >= start && createdAt <= end;
                         }
-                        break;
+                        return false;
                     case 'all':
-                        matchesFilter = true;
-                        break;
+                        return true;
+                    default:
+                        return false;
                 }
+            });
 
-                if (matchesFilter) {
-                    filteredOrders.push(order);
-                    const status = (order['status'] || 'unknown').toLowerCase();
-                    switch (status) {
-                        case 'pending':
-                            pending++;
-                            break;
-                        case 'confirmed':
-                            confirmed++;
-                            break;
-                        case 'tentative':
-                            tentative++;
-                            break;
-                        case 'cancelled':
-                            cancelled++;
-                            break;
-                    }
-                }
-            }
+            filteredOrders.forEach(order => {
+                const status = (order['status'] || 'unknown').toLowerCase();
+                if (status === 'pending') pending++;
+                else if (status === 'confirmed') confirmed++;
+                else if (status === 'tentative') tentative++;
+                else if (status === 'cancelled') cancelled++;
+            });
 
             appState.totalOrders = filteredOrders.length;
             appState.pendingOrders = pending;
@@ -636,15 +583,20 @@
             appState.cancelledOrders = cancelled;
         }
 
-        // --- UI Rendering Functions ---
+        function renderAllCards() {
+            renderOrderSummaryCard();
+            renderOrderPieChartCard();
+            renderRealStockInfoCard();
+            renderAIAnalysisCard();
+        }
 
         function renderApp() {
-            // Update language toggle button text
-            document.getElementById('language-text').textContent = getTranslatedString('language');
-            document.getElementById('logout-text').textContent = getTranslatedString('logoutButton'); // Translate logout button
-            document.getElementById('filter-orders-title').textContent = getTranslatedString('filterOrders');
+            document.documentElement.lang = appState.isEnglish ? 'en' : 'ar';
+            document.documentElement.dir = appState.isEnglish ? 'ltr' : 'rtl';
 
-            // Update sidebar button labels
+            document.getElementById('language-text').textContent = getTranslatedString('language');
+            document.getElementById('logout-text').textContent = getTranslatedString('logoutButton');
+            document.getElementById('filter-orders-title').textContent = getTranslatedString('filterOrders');
             document.getElementById('orders-button').querySelector('span').textContent = getTranslatedString('ordersButton');
             document.getElementById('dashboard-nav-btn').querySelector('span').textContent = getTranslatedString('dashboardButton');
             document.getElementById('add-product-nav-btn').querySelector('span').textContent = getTranslatedString('addProductButton');
@@ -656,147 +608,66 @@
             document.getElementById('site-config-nav-btn').querySelector('span').textContent = getTranslatedString('siteConfigButton');
             document.getElementById('facture-nav-btn').querySelector('span').textContent = getTranslatedString('factureButton');
             document.getElementById('charges-nav-btn').querySelector('span').textContent = getTranslatedString('charges');
-
-            // Update filter button labels
             document.querySelector('#filter-today .filter-label').textContent = getTranslatedString('today');
             document.querySelector('#filter-month .filter-label').textContent = getTranslatedString('thisMonth');
             document.querySelector('#filter-custom .filter-label').textContent = getTranslatedString('customRange');
             document.querySelector('#filter-all .filter-label').textContent = getTranslatedString('allOrders');
-
-            // Update custom date range labels
             document.querySelector('#custom-date-range label[for="start-date"]').textContent = getTranslatedString('From') + ':';
             document.querySelector('#custom-date-range label[for="end-date"]').textContent = getTranslatedString('To') + ':';
-
-            // Update card titles
             document.querySelector('#order-summary-card h3').textContent = getTranslatedString('orderSummary');
             document.querySelector('#order-distribution-card h3').textContent = getTranslatedString('orderDistribution');
             document.querySelector('#real-stock-info-card h3').textContent = getTranslatedString('realStockInfo');
-
-            // Update search hints
+            document.querySelector('#ai-analysis-card h3').textContent = getTranslatedString('aiPerformanceAnalysis');
             document.getElementById('real-stock-search').placeholder = getTranslatedString('searchStockHint');
+            document.querySelector('#regenerate-ai-analysis #regenerate-text').textContent = getTranslatedString('regenerate');
 
-            // Apply active state to the currently selected sidebar button
             updateSidebarActiveState(appState.activeSidebarButton);
-
-            // Re-render all dynamic content
             updateFilterButtons();
-            renderOrderSummaryCard();
-            renderOrderPieChartCard();
-            renderRealStockInfoCard(); // Call to render new stock info card
+            renderAllCards();
             updateCustomDateRangeDisplay();
         }
 
         function updateFilterButtons() {
             document.querySelectorAll('.filter-button').forEach(button => {
                 const filterId = button.id.replace('filter-', '');
-                if (filterId === appState.selectedFilter) {
-                    button.classList.remove('bg-gray-200', 'text-gray-800', 'hover:bg-gray-300');
-                    button.classList.add('bg-indigo-600', 'text-white', 'hover:bg-indigo-700');
-                } else {
-                    button.classList.remove('bg-indigo-600', 'text-white', 'hover:bg-indigo-700');
-                    button.classList.add('bg-gray-200', 'text-gray-800', 'hover:bg-gray-300');
-                }
+                button.classList.toggle('bg-indigo-600', filterId === appState.selectedFilter);
+                button.classList.toggle('text-white', filterId === appState.selectedFilter);
+                button.classList.toggle('bg-gray-200', filterId !== appState.selectedFilter);
+                button.classList.toggle('text-gray-800', filterId !== appState.selectedFilter);
             });
-
-            const customDateRangeDiv = document.getElementById('custom-date-range');
-            if (appState.selectedFilter === 'custom') {
-                customDateRangeDiv.classList.remove('hidden');
-            } else {
-                customDateRangeDiv.classList.add('hidden');
-            }
+            document.getElementById('custom-date-range').classList.toggle('hidden', appState.selectedFilter !== 'custom');
         }
 
         function renderOrderSummaryCard() {
             const contentDiv = document.getElementById('order-summary-content');
             if (appState.isOrdersLoading) {
-                contentDiv.innerHTML = `
-                    <div class="flex flex-col items-center justify-center">
-                        <div class="animate-spin rounded-full h-12 w-12 border-4 border-indigo-500 border-t-transparent"></div>
-                        <p class="mt-4 text-gray-600">Loading orders...</p>
-                    </div>
-                `;
+                contentDiv.innerHTML = `<div class="flex flex-col items-center justify-center"><div class="animate-spin rounded-full h-12 w-12 border-4 border-indigo-500 border-t-transparent"></div><p class="mt-4 text-gray-600">Loading orders...</p></div>`;
             } else if (appState.orderErrorMessage) {
-                contentDiv.innerHTML = `
-                    <div class="flex flex-col items-center justify-center text-red-500 p-4 text-center">
-                        <i class="fas fa-exclamation-triangle text-4xl mb-2"></i>
-                        <p class="text-lg">${appState.orderErrorMessage}</p>
-                        <button id="retry-orders-summary" class="mt-4 bg-blue-500 text-white px-4 py-2 rounded-lg shadow hover:bg-blue-600 transition duration-300">
-                            <i class="fas fa-sync-alt mr-2"></i>${getTranslatedString('retry')}
-                        </button>
-                    </div>
-                `;
-                document.getElementById('retry-orders-summary').onclick = fetchOrders;
+                contentDiv.innerHTML = `<div class="flex flex-col items-center justify-center text-red-500 p-4 text-center"><i class="fas fa-exclamation-triangle text-4xl mb-2"></i><p class="text-lg">${appState.orderErrorMessage}</p><button id="retry-orders-summary" class="mt-4 bg-blue-500 text-white px-4 py-2 rounded-lg shadow hover:bg-blue-600 transition duration-300"><i class="fas fa-sync-alt mr-2"></i>${getTranslatedString('retry')}</button></div>`;
+                document.getElementById('retry-orders-summary').onclick = fetchAllDataAndAnalyze;
             } else {
-                contentDiv.innerHTML = `
-                    <div class="w-full">
-                        ${buildStatusRow(getTranslatedString('totalOrders'), appState.totalOrders, 'teal-700', true)}
-                        <hr class="my-4 border-gray-200">
-                        ${buildStatusRow(getTranslatedString('pending'), appState.pendingOrders, 'indigo-600', false)}
-                        <hr class="my-4 border-gray-200">
-                        ${buildStatusRow(getTranslatedString('confirmed'), appState.confirmedOrders, 'green-600', false)}
-                        <hr class="my-4 border-gray-200">
-                        ${buildStatusRow(getTranslatedString('tentative'), appState.tentativeOrders, 'orange-600', false)}
-                        <hr class="my-4 border-gray-200">
-                        ${buildStatusRow(getTranslatedString('cancelled'), appState.cancelledOrders, 'red-600', false)}
-                    </div>
-                `;
+                contentDiv.innerHTML = `<div class="w-full">${buildStatusRow(getTranslatedString('totalOrders'), appState.totalOrders, 'teal-700', true)}<hr class="my-4 border-gray-200">${buildStatusRow(getTranslatedString('pending'), appState.pendingOrders, 'indigo-600', false)}<hr class="my-4 border-gray-200">${buildStatusRow(getTranslatedString('confirmed'), appState.confirmedOrders, 'green-600', false)}<hr class="my-4 border-gray-200">${buildStatusRow(getTranslatedString('tentative'), appState.tentativeOrders, 'orange-600', false)}<hr class="my-4 border-gray-200">${buildStatusRow(getTranslatedString('cancelled'), appState.cancelledOrders, 'red-600', false)}</div>`;
             }
         }
 
         function buildStatusRow(label, count, colorClass, isTotal) {
-            const textColor = `text-${colorClass}`;
-            const fontWeight = isTotal ? 'font-semibold' : 'font-medium';
-            const fontSize = isTotal ? 'text-lg' : 'text-base';
-            const countFontSize = isTotal ? 'text-lg' : 'text-base';
-
-            return `
-                <div class="flex items-center py-2">
-                    <div class="w-4 h-4 rounded-md bg-${colorClass}"></div>
-                    <span class="ml-3 flex-1 ${fontSize} ${fontWeight} text-gray-800">${label}</span>
-                    <span class="${countFontSize} font-bold ${textColor}">${count}</span>
-                </div>
-            `;
+            return `<div class="flex items-center py-2"><div class="w-4 h-4 rounded-md bg-${colorClass}"></div><span class="ml-3 flex-1 ${isTotal ? 'text-lg font-semibold' : 'text-base font-medium'} text-gray-800">${label}</span><span class="${isTotal ? 'text-lg' : 'text-base'} font-bold text-${colorClass}">${count}</span></div>`;
         }
 
-        const statusColors = {
-            'Pending': 'rgb(67, 56, 202)', // indigo-600
-            'Confirmed': 'rgb(22, 163, 74)', // green-600
-            'Tentative': 'rgb(234, 88, 12)', // orange-600
-            'Cancelled': 'rgb(220, 38, 38)', // red-600
-            'Unknown': 'rgb(156, 163, 175)', // gray-400
-        };
+        const statusColors = { 'Pending': 'rgb(67, 56, 202)', 'Confirmed': 'rgb(22, 163, 74)', 'Tentative': 'rgb(234, 88, 12)', 'Cancelled': 'rgb(220, 38, 38)', 'Unknown': 'rgb(156, 163, 175)' };
 
         function renderOrderPieChartCard() {
             const contentDiv = document.getElementById('order-distribution-content');
-            let canvas = document.getElementById('orderPieChart');
-
+            if (appState.orderPieChartInstance) {
+                appState.orderPieChartInstance.destroy();
+                appState.orderPieChartInstance = null;
+            }
             if (appState.isOrdersLoading) {
-                contentDiv.innerHTML = `
-                    <div class="flex flex-col items-center justify-center">
-                        <div class="animate-spin rounded-full h-12 w-12 border-4 border-indigo-500 border-t-transparent"></div>
-                        <p class="mt-4 text-gray-600">Loading chart data...</p>
-                    </div>
-                `;
-                if (appState.orderPieChartInstance) {
-                    appState.orderPieChartInstance.destroy();
-                    appState.orderPieChartInstance = null;
-                }
+                contentDiv.innerHTML = `<div class="flex flex-col items-center justify-center"><div class="animate-spin rounded-full h-12 w-12 border-4 border-indigo-500 border-t-transparent"></div><p class="mt-4 text-gray-600">Loading chart data...</p></div>`;
                 return;
-            } else if (appState.orderErrorMessage) {
-                contentDiv.innerHTML = `
-                    <div class="flex flex-col items-center justify-center text-red-500 p-4 text-center">
-                        <i class="fas fa-exclamation-triangle text-4xl mb-2"></i>
-                        <p class="text-lg">${appState.orderErrorMessage}</p>
-                        <button id="retry-orders-chart" class="mt-4 bg-blue-500 text-white px-4 py-2 rounded-lg shadow hover:bg-blue-600 transition duration-300">
-                            <i class="fas fa-sync-alt mr-2"></i>${getTranslatedString('retry')}
-                        </button>
-                    </div>
-                `;
-                document.getElementById('retry-orders-chart').onclick = fetchOrders;
-                if (appState.orderPieChartInstance) {
-                    appState.orderPieChartInstance.destroy();
-                    appState.orderPieChartInstance = null;
-                }
+            }
+            if (appState.orderErrorMessage) {
+                contentDiv.innerHTML = `<div class="flex flex-col items-center justify-center text-red-500 p-4 text-center"><i class="fas fa-exclamation-triangle text-4xl mb-2"></i><p class="text-lg">${appState.orderErrorMessage}</p></div>`;
                 return;
             }
 
@@ -807,168 +678,69 @@
             if (appState.cancelledOrders > 0) dataMap[getTranslatedString('cancelled')] = appState.cancelledOrders;
 
             if (appState.totalOrders === 0 || Object.keys(dataMap).length === 0) {
-                contentDiv.innerHTML = `
-                    <div class="bg-gray-100 p-8 rounded-xl shadow-inner text-center">
-                        <i class="fas fa-info-circle text-4xl text-gray-500 mb-3"></i>
-                        <p class="text-lg text-gray-700">${getTranslatedString('noDataChart')}</p>
-                    </div>
-                `;
-                if (appState.orderPieChartInstance) {
-                    appState.orderPieChartInstance.destroy();
-                    appState.orderPieChartInstance = null;
-                }
+                contentDiv.innerHTML = `<div class="bg-gray-100 p-8 rounded-xl shadow-inner text-center"><i class="fas fa-info-circle text-4xl text-gray-500 mb-3"></i><p class="text-lg text-gray-700">${getTranslatedString('noDataChart')}</p></div>`;
                 return;
             }
 
-            // Ensure canvas is present and get its context
-            if (!canvas || !document.body.contains(canvas)) { // Check if canvas exists and is in DOM
+            let canvas = document.getElementById('orderPieChart');
+            if (!canvas || !document.body.contains(canvas)) {
                 contentDiv.innerHTML = '<canvas id="orderPieChart"></canvas>';
                 canvas = document.getElementById('orderPieChart');
             }
             const ctx = canvas.getContext('2d');
-
             const labels = Object.keys(dataMap);
             const data = Object.values(dataMap);
             const colors = labels.map(label => {
-                // Map translated label back to original key for color lookup
-                const originalKey = Object.keys(translations['en']).find(key => translations['en'][key] === label || translations['ar'][key] === label);
-                if (originalKey) {
-                    // Normalize key to match statusColors (e.g., "pending" -> "Pending")
-                    const capitalizedKey = originalKey.charAt(0).toUpperCase() + originalKey.slice(1);
-                    return statusColors[capitalizedKey] || statusColors['Unknown'];
-                }
-                return statusColors['Unknown']; // Fallback
+                const originalKey = Object.keys(translations.en).find(key => getTranslatedString(key) === label);
+                const capitalizedKey = originalKey ? originalKey.charAt(0).toUpperCase() + originalKey.slice(1) : 'Unknown';
+                return statusColors[capitalizedKey] || statusColors.Unknown;
             });
 
-            if (appState.orderPieChartInstance) {
-                appState.orderPieChartInstance.data.labels = labels;
-                appState.orderPieChartInstance.data.datasets[0].data = data;
-                appState.orderPieChartInstance.data.datasets[0].backgroundColor = colors;
-                appState.orderPieChartInstance.options.plugins.title.text = `${getTranslatedString('totalOrders')}: ${appState.totalOrders}`;
-                appState.orderPieChartInstance.update();
-            } else {
-                appState.orderPieChartInstance = new Chart(ctx, {
-                    type: 'doughnut', // Use doughnut for the ring effect
-                    data: {
-                        labels: labels,
-                        datasets: [{
-                            data: data,
-                            backgroundColor: colors,
-                            borderColor: '#ffffff',
-                            borderWidth: 2,
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        cutout: '70%', // Controls the size of the inner hole for doughnut chart
-                        plugins: {
-                            legend: {
-                                position: 'bottom',
-                                labels: {
-                                    font: {
-                                        size: 14,
-                                        weight: '500',
-                                    },
-                                    color: '#333',
-                                    usePointStyle: true, // Use circle for legend items
-                                },
-                            },
-                            title: {
-                                display: true,
-                                text: `${getTranslatedString('totalOrders')}: ${appState.totalOrders}`,
-                                font: {
-                                    size: 18,
-                                    weight: 'bold',
-                                },
-                                color: '#1a202c', // Dark gray
-                            },
-                            tooltip: {
-                                callbacks: {
-                                    label: function(context) {
-                                        let label = context.label || '';
-                                        if (label) {
-                                            label += ': ';
-                                        }
-                                        if (context.parsed !== null) {
-                                            label += new Intl.NumberFormat('en-US', { style: 'decimal' }).format(context.parsed);
-                                            const total = context.dataset.data.reduce((sum, val) => sum + val, 0);
-                                            const percentage = (context.parsed / total * 100).toFixed(1);
-                                            label += ` (${percentage}%)`;
-                                        }
-                                        return label;
-                                    }
-                                }
-                            }
-                        }
-                    }
-                });
-            }
+            appState.orderPieChartInstance = new Chart(ctx, {
+                type: 'doughnut', data: { labels, datasets: [{ data, backgroundColor: colors, borderColor: '#ffffff', borderWidth: 2 }] },
+                options: { responsive: true, maintainAspectRatio: false, cutout: '70%', plugins: { legend: { position: 'bottom', labels: { font: { size: 14, weight: '500' }, color: '#333', usePointStyle: true, } }, title: { display: true, text: `${getTranslatedString('totalOrders')}: ${appState.totalOrders}`, font: { size: 18, weight: 'bold' }, color: '#1a202c' }, tooltip: { callbacks: { label: c => `${c.label}: ${c.parsed} (${(c.parsed/c.dataset.data.reduce((s,v)=>s+v, 0)*100).toFixed(1)}%)` } } } }
+            });
         }
 
         function renderRealStockInfoCard() {
             const contentDiv = document.getElementById('real-stock-info-content');
             if (appState.isStockLoading) {
-                contentDiv.innerHTML = `
-                    <div class="flex flex-col items-center justify-center h-full text-gray-600">
-                        <div class="animate-spin rounded-full h-12 w-12 border-4 border-indigo-500 border-t-transparent"></div>
-                        <p class="mt-4">${getTranslatedString('loadingStock')}</p>
-                    </div>
-                `;
+                contentDiv.innerHTML = `<div class="flex flex-col items-center justify-center h-full text-gray-600"><div class="animate-spin rounded-full h-12 w-12 border-4 border-indigo-500 border-t-transparent"></div><p class="mt-4">${getTranslatedString('loadingStock')}</p></div>`;
                 return;
             }
-
             if (appState.stockErrorMessage) {
-                contentDiv.innerHTML = `
-                    <div class="text-center text-red-500 p-4">
-                        <i class="fas fa-exclamation-circle text-4xl mb-2"></i>
-                        <p>${getTranslatedString('failedToLoadStock')} ${appState.stockErrorMessage}</p>
-                        <button id="retry-stock" class="mt-4 bg-blue-500 text-white px-4 py-2 rounded-lg shadow hover:bg-blue-600 transition duration-300">
-                            <i class="fas fa-sync-alt mr-2"></i>${getTranslatedString('retry')}
-                        </button>
-                    </div>
-                `;
-                document.getElementById('retry-stock').onclick = fetchRealStockData;
+                contentDiv.innerHTML = `<div class="text-center text-red-500 p-4"><i class="fas fa-exclamation-circle text-4xl mb-2"></i><p>${getTranslatedString('failedToLoadStock')} ${appState.stockErrorMessage}</p><button id="retry-stock" class="mt-4 bg-blue-500 text-white px-4 py-2 rounded-lg shadow hover:bg-blue-600 transition duration-300"><i class="fas fa-sync-alt mr-2"></i>${getTranslatedString('retry')}</button></div>`;
+                document.getElementById('retry-stock').onclick = fetchAllDataAndAnalyze;
                 return;
             }
-
-            const filteredStock = appState.realStockInfos.filter(item => {
-                const name = item.name ? item.name.toLowerCase() : '';
-                const filter = appState.realStockFilter.toLowerCase();
-                return name.includes(filter);
-            });
-
+            const filteredStock = appState.realStockInfos.filter(item => item.name?.toLowerCase().includes(appState.realStockFilter.toLowerCase()));
             if (filteredStock.length === 0) {
-                contentDiv.innerHTML = `
-                    <div class="flex flex-col items-center justify-center h-full text-gray-600">
-                        <i class="fas fa-info-circle text-4xl mb-3"></i>
-                        <p>${getTranslatedString('noStockFound')}</p>
-                    </div>
-                `;
+                contentDiv.innerHTML = `<div class="flex flex-col items-center justify-center h-full text-gray-600"><i class="fas fa-info-circle text-4xl mb-3"></i><p>${getTranslatedString('noStockFound')}</p></div>`;
                 return;
             }
+            contentDiv.innerHTML = `<div class="w-full text-left">${filteredStock.map(item => `<div class="bg-white p-3 rounded-lg shadow-sm mb-3 flex items-center justify-between"><div><h4 class="font-semibold text-gray-900">${item.name}</h4><p class="text-sm text-gray-600">Quantity: ${item.quantity}</p><p class="text-xs text-gray-500">Last Updated: ${item.lastUpdated}</p></div><i class="fas fa-cubes text-blue-500 text-2xl"></i></div>`).join('')}</div>`;
+        }
 
-            contentDiv.innerHTML = `
-                <div class="w-full text-left">
-                    ${filteredStock.map(item => `
-                        <div class="bg-white p-3 rounded-lg shadow-sm mb-3 flex items-center justify-between">
-                            <div>
-                                <h4 class="font-semibold text-gray-900">${item.name}</h4>
-                                <p class="text-sm text-gray-600">Quantity: ${item.quantity}</p>
-                                <p class="text-xs text-gray-500">Last Updated: ${item.lastUpdated}</p>
-                            </div>
-                            <i class="fas fa-cubes text-blue-500 text-2xl"></i>
-                        </div>
-                    `).join('')}
-                </div>
-            `;
+        function renderAIAnalysisCard() {
+            const contentDiv = document.getElementById('ai-analysis-content');
+            const md = window.markdownit();
+            if (appState.isAIAnalysisLoading) {
+                contentDiv.innerHTML = `<div class="flex flex-col items-center justify-center h-full"><div class="animate-spin rounded-full h-10 w-10 border-4 border-indigo-500 border-t-transparent"></div><p class="mt-3 text-gray-600">${getTranslatedString('loadingAnalysis')}</p></div>`;
+            } else if (appState.aiAnalysisError) {
+                contentDiv.innerHTML = `<div class="text-center text-red-500 p-4"><i class="fas fa-exclamation-circle text-3xl mb-2"></i><p>${appState.aiAnalysisError}</p></div>`;
+            } else if (appState.aiAnalysisResult) {
+                contentDiv.innerHTML = md.render(appState.aiAnalysisResult);
+            } else {
+                contentDiv.innerHTML = `<div class="text-center text-gray-500 p-4"><i class="fas fa-info-circle text-3xl mb-2"></i><p>No analysis available. Click Regenerate.</p></div>`;
+            }
         }
 
         function updateCustomDateRangeDisplay() {
             const selectedDateRangeText = document.getElementById('selected-date-range');
             if (appState.selectedFilter === 'custom' && appState.customStartDate && appState.customEndDate) {
-                const startDateFormatted = new Intl.DateTimeFormat(appState.isEnglish ? 'en-US' : 'ar-EG', { month: 'short', day: 'numeric', year: 'numeric' }).format(appState.customStartDate);
-                const endDateFormatted = new Intl.DateTimeFormat(appState.isEnglish ? 'en-US' : 'ar-EG', { month: 'short', day: 'numeric', year: 'numeric' }).format(appState.customEndDate);
+                const options = { month: 'short', day: 'numeric', year: 'numeric' };
+                const startDateFormatted = new Intl.DateTimeFormat(appState.isEnglish ? 'en-US' : 'ar-EG', options).format(appState.customStartDate);
+                const endDateFormatted = new Intl.DateTimeFormat(appState.isEnglish ? 'en-US' : 'ar-EG', options).format(appState.customEndDate);
                 selectedDateRangeText.textContent = `${getTranslatedString('selected')}: ${startDateFormatted} - ${endDateFormatted}`;
                 selectedDateRangeText.classList.remove('hidden');
             } else {
@@ -976,159 +748,95 @@
             }
         }
 
+        function updateSidebarActiveState(activeButtonId) {
+            document.querySelectorAll('.sidebar-button').forEach(button => {
+                button.classList.remove('active');
+            });
+            const activeButton = document.getElementById(activeButtonId);
+            if (activeButton) {
+                activeButton.classList.add('active');
+                appState.activeSidebarButton = activeButtonId;
+            }
+        }
+
         // --- Event Listeners ---
-
         document.addEventListener('DOMContentLoaded', () => {
-            // Initial render and data fetch
             renderApp();
-            fetchOrders();
-            fetchRealStockData();
+            fetchAllDataAndAnalyze();
 
-            // Responsive Sidebar Toggle
             const menuToggle = document.getElementById('menu-toggle');
             const sidebar = document.getElementById('sidebar');
             const sidebarOverlay = document.getElementById('sidebar-overlay');
 
-            if (menuToggle && sidebar && sidebarOverlay) {
-                menuToggle.addEventListener('click', () => {
-                    sidebar.classList.toggle('open');
-                    sidebarOverlay.classList.toggle('hidden');
-                });
+            menuToggle.addEventListener('click', () => {
+                sidebar.classList.toggle('open');
+                sidebarOverlay.classList.toggle('hidden');
+            });
+            sidebarOverlay.addEventListener('click', () => {
+                sidebar.classList.remove('open');
+                sidebarOverlay.classList.add('hidden');
+            });
 
-                sidebarOverlay.addEventListener('click', () => {
-                    sidebar.classList.remove('open');
-                    sidebarOverlay.classList.add('hidden');
-                });
-            }
-
-            // Language Toggle
-            document.getElementById('language-toggle').addEventListener('click', toggleLanguage);
-
-            // Logout Button
+            document.getElementById('language-toggle').addEventListener('click', () => {
+                appState.isEnglish = !appState.isEnglish;
+                renderApp();
+                fetchAllDataAndAnalyze();
+            });
+            
             document.getElementById('logout-button').addEventListener('click', () => {
-                // Clear any stored session data (the web equivalent of SharedPreferences)
                 localStorage.clear();
-                sessionStorage.clear(); // Also clear session storage for good measure
-
-                console.log('Logging out and clearing stored data...');
-
-                // Redirect to a login page (assuming one exists)
+                sessionStorage.clear();
                 window.location.href = 'index.html';
             });
+            
+            // --- FIXED: Sidebar Navigation Event Listeners ---
+            document.getElementById('orders-button').addEventListener('click', () => { window.location.href = 'orders-management-web.html'; });
+            document.getElementById('dashboard-nav-btn').addEventListener('click', () => { updateSidebarActiveState('dashboard-nav-btn'); });
+            document.getElementById('add-product-nav-btn').addEventListener('click', () => { window.location.href = 'addproduct.html'; });
+            document.getElementById('all-products-nav-btn').addEventListener('click', () => { window.location.href = 'products.html'; });
+            document.getElementById('admins-nav-btn').addEventListener('click', () => { window.location.href = 'admins.html'; });
+            document.getElementById('stock-nav-btn').addEventListener('click', () => { window.location.href = 'stock.html'; });
+            document.getElementById('pixels-nav-btn').addEventListener('click', () => { window.location.href = 'pixels.html'; });
+            document.getElementById('fees-delivery-nav-btn').addEventListener('click', () => { window.location.href = 'fees.html'; });
+            document.getElementById('site-config-nav-btn').addEventListener('click', () => { window.location.href = 'siteconfig.html'; });
+            document.getElementById('facture-nav-btn').addEventListener('click', () => { window.location.href = 'facture.html'; });
+            document.getElementById('charges-nav-btn').addEventListener('click', () => { window.location.href = 'charges.html'; });
 
-            // --- Sidebar Navigation ---
-            // This setup uses window.location.href to navigate. 
-            // For this to work, EACH target HTML file must have the same sidebar and header structure.
-            document.getElementById('orders-button').addEventListener('click', () => {
-                window.location.href = 'orders-management-web.html';
-            });
-            document.getElementById('dashboard-nav-btn').addEventListener('click', () => {
-                // Already on the dashboard, no navigation needed, but we ensure the state is correct.
-                updateSidebarActiveState('dashboard-nav-btn');
-            });
-            document.getElementById('add-product-nav-btn').addEventListener('click', () => {
-                window.location.href = 'addproduct.html';
-            });
-            document.getElementById('all-products-nav-btn').addEventListener('click', () => {
-                window.location.href = 'products.html';
-            });
-            document.getElementById('admins-nav-btn').addEventListener('click', () => {
-                window.location.href = 'admins.html';
-            });
-            document.getElementById('stock-nav-btn').addEventListener('click', () => {
-                window.location.href = 'stock.html';
-            });
-            document.getElementById('pixels-nav-btn').addEventListener('click', () => {
-                window.location.href = 'pixels.html';
-            });
-            document.getElementById('fees-delivery-nav-btn').addEventListener('click', () => {
-                window.location.href = 'fees.html';
-            });
-            document.getElementById('site-config-nav-btn').addEventListener('click', () => {
-                window.location.href = 'siteconfig.html';
-            });
-            document.getElementById('facture-nav-btn').addEventListener('click', () => {
-                window.location.href = 'facture.html';
-            });
-            document.getElementById('charges-nav-btn').addEventListener('click', () => {
-                window.location.href = 'charges.html';
+
+            document.getElementById('regenerate-ai-analysis').addEventListener('click', fetchAIAnalysis);
+
+            document.querySelectorAll('.filter-button').forEach(button => {
+                button.addEventListener('click', () => {
+                    const filter = button.id.replace('filter-', '');
+                    appState.selectedFilter = filter;
+                    updateFilterButtons();
+                    if (filter !== 'custom' || (appState.customStartDate && appState.customEndDate)) {
+                        fetchAllDataAndAnalyze();
+                    }
+                });
             });
 
-            // Filter Buttons
-            document.getElementById('filter-today').addEventListener('click', () => {
-                appState.selectedFilter = 'today';
-                appState.customStartDate = null;
-                appState.customEndDate = null;
-                updateFilterButtons();
-                fetchOrders();
-            });
-
-            document.getElementById('filter-month').addEventListener('click', () => {
-                appState.selectedFilter = 'month';
-                appState.customStartDate = null;
-                appState.customEndDate = null;
-                updateFilterButtons();
-                fetchOrders();
-            });
-
-            document.getElementById('filter-custom').addEventListener('click', () => {
-                appState.selectedFilter = 'custom';
-                updateFilterButtons();
-                // If custom dates are already set, re-fetch. Otherwise, wait for user input.
-                if (appState.customStartDate && appState.customEndDate) {
-                    fetchOrders();
-                }
-            });
-
-            document.getElementById('filter-all').addEventListener('click', () => {
-                appState.selectedFilter = 'all';
-                appState.customStartDate = null;
-                appState.customEndDate = null;
-                updateFilterButtons();
-                fetchOrders();
-            });
-
-            // Custom Date Range Inputs
             const startDateInput = document.getElementById('start-date');
             const endDateInput = document.getElementById('end-date');
-
-            startDateInput.addEventListener('change', (e) => {
-                // Parse as local date first to avoid timezone issues with date input
-                const localDate = new Date(e.target.value);
-                appState.customStartDate = new Date(Date.UTC(localDate.getFullYear(), localDate.getMonth(), localDate.getDate())); // Convert to UTC start of day
+            const dateChangeHandler = () => {
+                const localStart = startDateInput.value ? new Date(startDateInput.value + 'T00:00:00Z') : null;
+                const localEnd = endDateInput.value ? new Date(endDateInput.value + 'T00:00:00Z') : null;
                 
-                if (appState.customEndDate && appState.customStartDate.getTime() > appState.customEndDate.getTime()) {
-                    // Adjust end date if it's before start date
-                    appState.customEndDate = appState.customStartDate;
-                    // Format back to YYYY-MM-DD for input field
-                    const adjustedEndDate = new Date(appState.customEndDate.getTime());
-                    endDateInput.value = adjustedEndDate.toISOString().split('T')[0];
+                appState.customStartDate = localStart;
+                appState.customEndDate = localEnd;
+                
+                if (appState.customStartDate && appState.customEndDate) {
+                    if(appState.customStartDate > appState.customEndDate) {
+                        endDateInput.value = startDateInput.value;
+                        appState.customEndDate = appState.customStartDate;
+                    }
+                    fetchAllDataAndAnalyze();
                 }
                 updateCustomDateRangeDisplay();
-                if (appState.customStartDate && appState.customEndDate) {
-                    fetchOrders();
-                }
-            });
+            };
+            startDateInput.addEventListener('change', dateChangeHandler);
+            endDateInput.addEventListener('change', dateChangeHandler);
 
-            endDateInput.addEventListener('change', (e) => {
-                // Parse as local date first
-                const localDate = new Date(e.target.value);
-                appState.customEndDate = new Date(Date.UTC(localDate.getFullYear(), localDate.getMonth(), localDate.getDate(), 23, 59, 59, 999)); // Convert to UTC end of day
-                
-                if (appState.customStartDate && appState.customEndDate.getTime() < appState.customStartDate.getTime()) {
-                    // Adjust start date if it's after end date
-                    appState.customStartDate = appState.customEndDate;
-                    // Format back to YYYY-MM-DD for input field
-                    const adjustedStartDate = new Date(appState.customStartDate.getTime());
-                    startDateInput.value = adjustedStartDate.toISOString().split('T')[0];
-                }
-                updateCustomDateRangeDisplay();
-                if (appState.customStartDate && appState.customEndDate) {
-                    fetchOrders();
-                }
-            });
-
-            // Stock Search
             document.getElementById('real-stock-search').addEventListener('input', (e) => {
                 appState.realStockFilter = e.target.value;
                 renderRealStockInfoCard();

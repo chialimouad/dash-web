@@ -898,20 +898,20 @@
             document.getElementById('logout-button').addEventListener('click', () => {
                 localStorage.clear();
                 sessionStorage.clear();
-                window.location.href = 'index.php';
+                window.location.href = 'index.html';
             });
             
-            document.getElementById('orders-button').addEventListener('click', () => { window.location.href = 'orders-management-web.php'; });
+            document.getElementById('orders-button').addEventListener('click', () => { window.location.href = 'orders-management-web.html'; });
             document.getElementById('dashboard-nav-btn').addEventListener('click', () => { updateSidebarActiveState('dashboard-nav-btn'); });
-            document.getElementById('add-product-nav-btn').addEventListener('click', () => { window.location.href = 'addproduct.php'; });
-            document.getElementById('all-products-nav-btn').addEventListener('click', () => { window.location.href = 'products.php'; });
-            document.getElementById('admins-nav-btn').addEventListener('click', () => { window.location.href = 'admins.php'; });
-            document.getElementById('stock-nav-btn').addEventListener('click', () => { window.location.href = 'stock.php'; });
-            document.getElementById('pixels-nav-btn').addEventListener('click', () => { window.location.href = 'pixels.php'; });
-            document.getElementById('fees-delivery-nav-btn').addEventListener('click', () => { window.location.href = 'fees.php'; });
-            document.getElementById('site-config-nav-btn').addEventListener('click', () => { window.location.href = 'siteconfig.php'; });
-            document.getElementById('facture-nav-btn').addEventListener('click', () => { window.location.href = 'facture.php'; });
-            document.getElementById('charges-nav-btn').addEventListener('click', () => { window.location.href = 'charges.php'; });
+            document.getElementById('add-product-nav-btn').addEventListener('click', () => { window.location.href = 'addproduct.html'; });
+            document.getElementById('all-products-nav-btn').addEventListener('click', () => { window.location.href = 'products.html'; });
+            document.getElementById('admins-nav-btn').addEventListener('click', () => { window.location.href = 'admins.html'; });
+            document.getElementById('stock-nav-btn').addEventListener('click', () => { window.location.href = 'stock.html'; });
+            document.getElementById('pixels-nav-btn').addEventListener('click', () => { window.location.href = 'pixels.html'; });
+            document.getElementById('fees-delivery-nav-btn').addEventListener('click', () => { window.location.href = 'fees.html'; });
+            document.getElementById('site-config-nav-btn').addEventListener('click', () => { window.location.href = 'siteconfig.html'; });
+            document.getElementById('facture-nav-btn').addEventListener('click', () => { window.location.href = 'facture.html'; });
+            document.getElementById('charges-nav-btn').addEventListener('click', () => { window.location.href = 'charges.html'; });
 
 
             document.getElementById('regenerate-ai-analysis').addEventListener('click', fetchAIAnalysis);

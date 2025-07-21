@@ -307,7 +307,7 @@
 
             <hr class="border-gray-300 mb-6">
 
-            <section id="dashboard-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-6 flex-1">
+            <section id="dashboard-grid" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 flex-1">
                 <div id="order-summary-card" class="dashboard-card bg-white p-6 rounded-xl shadow-lg flex flex-col">
                     <div class="flex items-center mb-4">
                         <i class="fas fa-list-alt text-3xl text-gray-800"></i>
@@ -326,6 +326,17 @@
                     </div>
                 </div>
 
+                <!-- NEW: Daily Orders Bar Chart -->
+                <div id="daily-orders-card" class="dashboard-card bg-white p-6 rounded-xl shadow-lg flex flex-col">
+                    <div class="flex items-center mb-4">
+                        <i class="fas fa-chart-bar text-3xl text-gray-800"></i>
+                        <h3 id="daily-orders-title" class="text-2xl font-bold text-gray-800 ml-3">Daily Orders</h3>
+                    </div>
+                    <div id="daily-orders-content" class="flex-1 flex items-center justify-center">
+                        <canvas id="dailyOrdersBarChart"></canvas>
+                    </div>
+                </div>
+
                 <div id="real-stock-info-card" class="dashboard-card bg-white p-6 rounded-xl shadow-lg flex flex-col">
                     <div class="flex items-center mb-4">
                         <i class="fas fa-boxes-stacked text-3xl text-gray-800"></i>
@@ -338,7 +349,7 @@
                     <div id="real-stock-info-content" class="flex-1 overflow-y-auto"></div>
                 </div>
                 
-                <div id="ai-analysis-card" class="dashboard-card bg-white p-6 rounded-xl shadow-lg flex flex-col md:col-span-2 lg:col-span-2 xl:col-span-3">
+                <div id="ai-analysis-card" class="dashboard-card bg-white p-6 rounded-xl shadow-lg flex flex-col md:col-span-2 xl:col-span-4">
                     <div class="flex items-center justify-between mb-4">
                         <div class="flex items-center">
                             <i class="fas fa-robot text-3xl text-indigo-600"></i>
@@ -364,6 +375,7 @@
             confirmedOrders: 0,
             tentativeOrders: 0,
             cancelledOrders: 0,
+            dailyOrderCounts: [], // NEW: For bar chart
             isOrdersLoading: true,
             isStockLoading: true,
             orderErrorMessage: null,
@@ -375,6 +387,7 @@
             stockFilter: '',
             realStockFilter: '',
             orderPieChartInstance: null,
+            dailyOrdersBarChartInstance: null, // NEW: Bar chart instance
             activeSidebarButton: 'dashboard-nav-btn',
             isAIAnalysisLoading: true,
             aiAnalysisResult: null,
@@ -385,10 +398,12 @@
             'en': {
                 'adminPanelTitle': 'Admin Panel', 'filterOrders': 'Filter Orders', 'today': 'Today', 'thisMonth': 'This Month', 'customRange': 'Custom Range', 'allOrders': 'All Orders', 'ordersButton': 'Orders', 'dashboardButton': 'Dashboard', 'addProductButton': 'Add Product', 'allProductsButton': 'All Products', 'adminsButton': 'Admins', 'stockButton': 'Stock', 'pixelsButton': 'Pixels', 'feesDeliveryButton': 'Fees Delivery', 'siteConfigButton': 'Site Config', 'factureButton': 'Invoice', 'charges': 'Charges', 'logoutButton': 'Logout', 'selected': 'Selected', 'orderSummary': 'Order Summary', 'totalOrders': 'Total Orders', 'pending': 'Pending', 'confirmed': 'Confirmed', 'tentative': 'Tentative', 'cancelled': 'Cancelled', 'orderDistribution': 'Order Distribution', 'realStockInfo': 'Real Stock Info', 'searchHint': 'Search...', 'searchStockHint': 'Search stock...', 'noDataChart': 'No data available to show the chart.', 'failedToLoadOrders': 'Failed to load orders:', 'failedToLoadStock': 'Failed to load stock:', 'errorFetchingOrders': 'Error fetching orders:', 'errorFetchingStock': 'Error fetching stock:', 'retry': 'Retry', 'role': 'Role', 'unknown': 'Unknown', 'language': 'English', 'From': 'From', 'To': 'To', 'noStockFound': 'No stock items found matching your search.', 'loadingStock': 'Loading stock info...',
                 'aiPerformanceAnalysis': 'AI Performance Analysis', 'regenerate': 'Regenerate', 'loadingAnalysis': 'Generating AI analysis...', 'errorAnalysis': 'Could not generate AI analysis.',
+                'dailyOrders': 'Daily Orders', 'weekdays': ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
             },
             'ar': {
                 'adminPanelTitle': 'لوحة التحكم', 'filterOrders': 'تصفية الطلبات', 'today': 'اليوم', 'thisMonth': 'هذا الشهر', 'customRange': 'نطاق مخصص', 'allOrders': 'جميع الطلبات', 'ordersButton': 'الطلبات', 'dashboardButton': 'لوحة القيادة', 'addProductButton': 'إضافة منتج', 'allProductsButton': 'جميع المنتجات', 'adminsButton': 'المسؤولون', 'stockButton': 'المخزون', 'pixelsButton': 'البكسلات', 'feesDeliveryButton': 'رسوم التوصيل', 'siteConfigButton': 'إعدادات الموقع', 'factureButton': 'فاتورة', 'charges': 'الرسوم', 'logoutButton': 'تسجيل الخروج', 'selected': 'المحدد', 'orderSummary': 'ملخص الطلبات', 'totalOrders': 'إجمالي الطلبات', 'pending': 'معلقة', 'confirmed': 'مؤكدة', 'tentative': 'مؤقتة', 'cancelled': 'ملغاة', 'orderDistribution': 'توزيع الطلبات', 'realStockInfo': 'معلومات المخزون الحقيقي', 'searchHint': 'بحث...', 'searchStockHint': 'بحث في المخزون...', 'noDataChart': 'لا توجد بيانات لعرض الرسم البياني.', 'failedToLoadOrders': 'فشل تحميل الطلبات:', 'failedToLoadStock': 'فشل تحميل المخزون:', 'errorFetchingOrders': 'خطأ في جلب الطلبات:', 'errorFetchingStock': 'خطأ في جلب المخزون:', 'retry': 'إعادة المحاولة', 'role': 'الدور', 'unknown': 'غير معروف', 'language': 'العربية', 'From': 'من', 'To': 'إلى', 'noStockFound': 'لم يتم العثور على عناصر مخزون مطابقة لبحثك.', 'loadingStock': 'جاري تحميل معلومات المخزون...',
                 'aiPerformanceAnalysis': 'تحليل الأداء بالذكاء الاصطناعي', 'regenerate': 'إعادة إنشاء', 'loadingAnalysis': 'جاري إنشاء تحليل الذكاء الاصطناعي...', 'errorAnalysis': 'تعذر إنشاء تحليل الذكاء الاصطناعي.',
+                'dailyOrders': 'الطلبات اليومية', 'weekdays': ['الأحد', 'الإثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'],
             },
         };
 
@@ -421,6 +436,7 @@
                 if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
                 const fetchedOrders = await response.json();
                 processOrderData(fetchedOrders);
+                processDailyOrderData(fetchedOrders); // NEW: Process data for bar chart
             } catch (e) {
                 appState.orderErrorMessage = `${getTranslatedString('errorFetchingOrders')} ${e.message}`;
                 console.error('Error fetching orders:', e);
@@ -428,6 +444,7 @@
                 appState.isOrdersLoading = false;
                 renderOrderSummaryCard();
                 renderOrderPieChartCard();
+                renderDailyOrdersBarChartCard(); // NEW: Render bar chart
             }
         }
 
@@ -502,7 +519,7 @@
             try {
                 const chatHistory = [{ role: "user", parts: [{ text: prompt }] }];
                 const payload = { contents: chatHistory };
-                const apiKey = "AIzaSyBikiEPT7buJnzVTPzkh_vfCNWfMMnBOs0"; 
+                const apiKey = ""; 
                 const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
                 
                 const response = await fetch(apiUrl, {
@@ -583,9 +600,35 @@
             appState.cancelledOrders = cancelled;
         }
 
+        // NEW: Function to process data for the daily orders bar chart
+        function processDailyOrderData(ordersList) {
+            const dailyCounts = Array(7).fill(0); // 0 for Sun, 1 for Mon, etc.
+            const today = new Date();
+            const sevenDaysAgo = new Date(today);
+            sevenDaysAgo.setDate(today.getDate() - 6);
+            sevenDaysAgo.setHours(0, 0, 0, 0);
+
+            ordersList.forEach(order => {
+                let createdAt;
+                try {
+                    createdAt = new Date(order['createdAt']?.toString());
+                    if (isNaN(createdAt.getTime())) return;
+                } catch {
+                    return;
+                }
+
+                if (createdAt >= sevenDaysAgo) {
+                    const dayIndex = createdAt.getDay();
+                    dailyCounts[dayIndex]++;
+                }
+            });
+            appState.dailyOrderCounts = dailyCounts;
+        }
+
         function renderAllCards() {
             renderOrderSummaryCard();
             renderOrderPieChartCard();
+            renderDailyOrdersBarChartCard();
             renderRealStockInfoCard();
             renderAIAnalysisCard();
         }
@@ -617,6 +660,7 @@
             document.querySelector('#order-summary-card h3').textContent = getTranslatedString('orderSummary');
             document.querySelector('#order-distribution-card h3').textContent = getTranslatedString('orderDistribution');
             document.querySelector('#real-stock-info-card h3').textContent = getTranslatedString('realStockInfo');
+            document.querySelector('#daily-orders-card h3').textContent = getTranslatedString('dailyOrders');
             document.querySelector('#ai-analysis-card h3').textContent = getTranslatedString('aiPerformanceAnalysis');
             document.getElementById('real-stock-search').placeholder = getTranslatedString('searchStockHint');
             document.querySelector('#regenerate-ai-analysis #regenerate-text').textContent = getTranslatedString('regenerate');
@@ -699,6 +743,74 @@
             appState.orderPieChartInstance = new Chart(ctx, {
                 type: 'doughnut', data: { labels, datasets: [{ data, backgroundColor: colors, borderColor: '#ffffff', borderWidth: 2 }] },
                 options: { responsive: true, maintainAspectRatio: false, cutout: '70%', plugins: { legend: { position: 'bottom', labels: { font: { size: 14, weight: '500' }, color: '#333', usePointStyle: true, } }, title: { display: true, text: `${getTranslatedString('totalOrders')}: ${appState.totalOrders}`, font: { size: 18, weight: 'bold' }, color: '#1a202c' }, tooltip: { callbacks: { label: c => `${c.label}: ${c.parsed} (${(c.parsed/c.dataset.data.reduce((s,v)=>s+v, 0)*100).toFixed(1)}%)` } } } }
+            });
+        }
+
+        // NEW: Function to render the daily orders bar chart
+        function renderDailyOrdersBarChartCard() {
+            const contentDiv = document.getElementById('daily-orders-content');
+            if (appState.dailyOrdersBarChartInstance) {
+                appState.dailyOrdersBarChartInstance.destroy();
+                appState.dailyOrdersBarChartInstance = null;
+            }
+
+            if (appState.isOrdersLoading) {
+                contentDiv.innerHTML = `<div class="flex flex-col items-center justify-center"><div class="animate-spin rounded-full h-12 w-12 border-4 border-indigo-500 border-t-transparent"></div><p class="mt-4 text-gray-600">Loading daily data...</p></div>`;
+                return;
+            }
+             if (appState.orderErrorMessage) {
+                contentDiv.innerHTML = `<div class="flex flex-col items-center justify-center text-red-500 p-4 text-center"><i class="fas fa-exclamation-triangle text-4xl mb-2"></i><p class="text-lg">Data unavailable</p></div>`;
+                return;
+            }
+
+            let canvas = document.getElementById('dailyOrdersBarChart');
+             if (!canvas || !document.body.contains(canvas)) {
+                contentDiv.innerHTML = '<canvas id="dailyOrdersBarChart"></canvas>';
+                canvas = document.getElementById('dailyOrdersBarChart');
+            }
+            const ctx = canvas.getContext('2d');
+            
+            const weekdays = getTranslatedString('weekdays');
+            const todayIndex = new Date().getDay();
+            const labels = [...weekdays.slice(todayIndex + 1), ...weekdays.slice(0, todayIndex + 1)];
+            const data = [...appState.dailyOrderCounts.slice(todayIndex + 1), ...appState.dailyOrderCounts.slice(0, todayIndex + 1)];
+
+            appState.dailyOrdersBarChartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: getTranslatedString('totalOrders'),
+                        data: data,
+                        backgroundColor: 'rgba(79, 70, 229, 0.8)',
+                        borderColor: 'rgba(67, 56, 202, 1)',
+                        borderWidth: 1,
+                        borderRadius: 4,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                stepSize: 1
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        title: {
+                            display: true,
+                            text: 'Last 7 Days',
+                            font: { size: 16, weight: '600'},
+                            color: '#374151'
+                        }
+                    }
+                }
             });
         }
 
@@ -786,21 +898,20 @@
             document.getElementById('logout-button').addEventListener('click', () => {
                 localStorage.clear();
                 sessionStorage.clear();
-                window.location.href = 'index.html';
+                window.location.href = 'index.php';
             });
             
-            // --- FIXED: Sidebar Navigation Event Listeners ---
-            document.getElementById('orders-button').addEventListener('click', () => { window.location.href = 'orders-management-web.html'; });
+            document.getElementById('orders-button').addEventListener('click', () => { window.location.href = 'orders-management-web.php'; });
             document.getElementById('dashboard-nav-btn').addEventListener('click', () => { updateSidebarActiveState('dashboard-nav-btn'); });
-            document.getElementById('add-product-nav-btn').addEventListener('click', () => { window.location.href = 'addproduct.html'; });
-            document.getElementById('all-products-nav-btn').addEventListener('click', () => { window.location.href = 'products.html'; });
-            document.getElementById('admins-nav-btn').addEventListener('click', () => { window.location.href = 'admins.html'; });
-            document.getElementById('stock-nav-btn').addEventListener('click', () => { window.location.href = 'stock.html'; });
-            document.getElementById('pixels-nav-btn').addEventListener('click', () => { window.location.href = 'pixels.html'; });
-            document.getElementById('fees-delivery-nav-btn').addEventListener('click', () => { window.location.href = 'fees.html'; });
-            document.getElementById('site-config-nav-btn').addEventListener('click', () => { window.location.href = 'siteconfig.html'; });
-            document.getElementById('facture-nav-btn').addEventListener('click', () => { window.location.href = 'facture.html'; });
-            document.getElementById('charges-nav-btn').addEventListener('click', () => { window.location.href = 'charges.html'; });
+            document.getElementById('add-product-nav-btn').addEventListener('click', () => { window.location.href = 'addproduct.php'; });
+            document.getElementById('all-products-nav-btn').addEventListener('click', () => { window.location.href = 'products.php'; });
+            document.getElementById('admins-nav-btn').addEventListener('click', () => { window.location.href = 'admins.php'; });
+            document.getElementById('stock-nav-btn').addEventListener('click', () => { window.location.href = 'stock.php'; });
+            document.getElementById('pixels-nav-btn').addEventListener('click', () => { window.location.href = 'pixels.php'; });
+            document.getElementById('fees-delivery-nav-btn').addEventListener('click', () => { window.location.href = 'fees.php'; });
+            document.getElementById('site-config-nav-btn').addEventListener('click', () => { window.location.href = 'siteconfig.php'; });
+            document.getElementById('facture-nav-btn').addEventListener('click', () => { window.location.href = 'facture.php'; });
+            document.getElementById('charges-nav-btn').addEventListener('click', () => { window.location.href = 'charges.php'; });
 
 
             document.getElementById('regenerate-ai-analysis').addEventListener('click', fetchAIAnalysis);

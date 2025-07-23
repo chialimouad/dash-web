@@ -338,6 +338,24 @@
                     <div id="real-stock-info-content" class="flex-1 overflow-y-auto"></div>
                 </div>
                 
+                <!-- NEW: Top Products Card -->
+                <div id="top-products-card" class="dashboard-card bg-white p-6 rounded-xl shadow-lg flex flex-col">
+                    <div class="flex items-center mb-4">
+                        <i class="fas fa-trophy text-3xl text-yellow-500"></i>
+                        <h3 id="top-products-title" class="text-2xl font-bold text-gray-800 ml-3">Top Products</h3>
+                    </div>
+                    <div id="top-products-content" class="flex-1 overflow-y-auto"></div>
+                </div>
+
+                <!-- NEW: Top Wilayas Card -->
+                <div id="top-wilayas-card" class="dashboard-card bg-white p-6 rounded-xl shadow-lg flex flex-col">
+                    <div class="flex items-center mb-4">
+                        <i class="fas fa-map-marked-alt text-3xl text-green-600"></i>
+                        <h3 id="top-wilayas-title" class="text-2xl font-bold text-gray-800 ml-3">Top Wilayas</h3>
+                    </div>
+                    <div id="top-wilayas-content" class="flex-1 overflow-y-auto"></div>
+                </div>
+
                 <div id="ai-analysis-card" class="dashboard-card bg-white p-6 rounded-xl shadow-lg flex flex-col md:col-span-2 xl:col-span-3">
                     <div class="flex items-center justify-between mb-4">
                         <div class="flex items-center">
@@ -352,7 +370,6 @@
                     <div id="ai-analysis-content" class="flex-1 space-y-4"></div>
                 </div>
 
-                <!-- Daily Orders Bar Chart - MOVED -->
                 <div id="daily-orders-card" class="dashboard-card bg-white p-6 rounded-xl shadow-lg flex flex-col md:col-span-2 xl:col-span-3">
                     <div class="flex items-center mb-4">
                         <i class="fas fa-chart-bar text-3xl text-gray-800"></i>
@@ -367,15 +384,21 @@
     </div>
 
     <script>
+        // --- State Management ---
         const appState = {
             products: [],
             realStockInfos: [],
             totalOrders: 0,
             pendingOrders: 0,
             confirmedOrders: 0,
+            dispatchedOrders: 0,
             tentativeOrders: 0,
             cancelledOrders: 0,
-            dailyOrderCounts: [], // NEW: For bar chart
+            topProduct: 'N/A',
+            topWilaya: 'N/A',
+            topProducts: [], // ADDED
+            topWilayas: [], // ADDED
+            dailyOrderCounts: [],
             isOrdersLoading: true,
             isStockLoading: true,
             orderErrorMessage: null,
@@ -387,23 +410,26 @@
             stockFilter: '',
             realStockFilter: '',
             orderPieChartInstance: null,
-            dailyOrdersBarChartInstance: null, // NEW: Bar chart instance
+            dailyOrdersBarChartInstance: null,
             activeSidebarButton: 'dashboard-nav-btn',
             isAIAnalysisLoading: true,
             aiAnalysisResult: null,
             aiAnalysisError: null,
         };
 
+        // --- Localization ---
         const translations = {
             'en': {
-                'adminPanelTitle': 'Admin Panel', 'filterOrders': 'Filter Orders', 'today': 'Today', 'thisMonth': 'This Month', 'customRange': 'Custom Range', 'allOrders': 'All Orders', 'ordersButton': 'Orders', 'dashboardButton': 'Dashboard', 'addProductButton': 'Add Product', 'allProductsButton': 'All Products', 'adminsButton': 'Admins', 'stockButton': 'Stock', 'pixelsButton': 'Pixels', 'feesDeliveryButton': 'Fees Delivery', 'siteConfigButton': 'Site Config', 'factureButton': 'Invoice', 'charges': 'Charges', 'logoutButton': 'Logout', 'selected': 'Selected', 'orderSummary': 'Order Summary', 'totalOrders': 'Total Orders', 'pending': 'Pending', 'confirmed': 'Confirmed', 'tentative': 'Tentative', 'cancelled': 'Cancelled', 'orderDistribution': 'Order Distribution', 'realStockInfo': 'Real Stock Info', 'searchHint': 'Search...', 'searchStockHint': 'Search stock...', 'noDataChart': 'No data available to show the chart.', 'failedToLoadOrders': 'Failed to load orders:', 'failedToLoadStock': 'Failed to load stock:', 'errorFetchingOrders': 'Error fetching orders:', 'errorFetchingStock': 'Error fetching stock:', 'retry': 'Retry', 'role': 'Role', 'unknown': 'Unknown', 'language': 'English', 'From': 'From', 'To': 'To', 'noStockFound': 'No stock items found matching your search.', 'loadingStock': 'Loading stock info...',
+                'adminPanelTitle': 'Admin Panel', 'filterOrders': 'Filter Orders', 'today': 'Today', 'thisMonth': 'This Month', 'customRange': 'Custom Range', 'allOrders': 'All Orders', 'ordersButton': 'Orders', 'dashboardButton': 'Dashboard', 'addProductButton': 'Add Product', 'allProductsButton': 'All Products', 'adminsButton': 'Admins', 'stockButton': 'Stock', 'pixelsButton': 'Pixels', 'feesDeliveryButton': 'Fees Delivery', 'siteConfigButton': 'Site Config', 'factureButton': 'Invoice', 'charges': 'Charges', 'logoutButton': 'Logout', 'selected': 'Selected', 'orderSummary': 'Order Summary', 'totalOrders': 'Total Orders', 'pending': 'Pending', 'confirmed': 'Confirmed', 'dispatched': 'Dispatched', 'tentative': 'Tentative', 'cancelled': 'Cancelled', 'orderDistribution': 'Order Distribution', 'realStockInfo': 'Real Stock Info', 'searchHint': 'Search...', 'searchStockHint': 'Search stock...', 'noDataChart': 'No data available to show the chart.', 'failedToLoadOrders': 'Failed to load orders:', 'failedToLoadStock': 'Failed to load stock:', 'errorFetchingOrders': 'Error fetching orders:', 'errorFetchingStock': 'Error fetching stock:', 'retry': 'Retry', 'role': 'Role', 'unknown': 'Unknown', 'language': 'English', 'From': 'From', 'To': 'To', 'noStockFound': 'No stock items found matching your search.', 'loadingStock': 'Loading stock info...',
                 'aiPerformanceAnalysis': 'AI Performance Analysis', 'regenerate': 'Regenerate', 'loadingAnalysis': 'Generating AI analysis...', 'errorAnalysis': 'Could not generate AI analysis.',
-                'dailyOrders': 'Daily Orders', 'weekdays': ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
+                'dailyOrders': 'Daily Orders', 'weekdays': ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'], 
+                'topProducts': 'Top Products', 'topWilayas': 'Top Wilayas', 'orders': 'orders', 'noTopProducts': 'No product sales in this period.', 'noTopWilayas': 'No orders from any wilaya in this period.',
             },
             'ar': {
-                'adminPanelTitle': 'لوحة التحكم', 'filterOrders': 'تصفية الطلبات', 'today': 'اليوم', 'thisMonth': 'هذا الشهر', 'customRange': 'نطاق مخصص', 'allOrders': 'جميع الطلبات', 'ordersButton': 'الطلبات', 'dashboardButton': 'لوحة القيادة', 'addProductButton': 'إضافة منتج', 'allProductsButton': 'جميع المنتجات', 'adminsButton': 'المسؤولون', 'stockButton': 'المخزون', 'pixelsButton': 'البكسلات', 'feesDeliveryButton': 'رسوم التوصيل', 'siteConfigButton': 'إعدادات الموقع', 'factureButton': 'فاتورة', 'charges': 'الرسوم', 'logoutButton': 'تسجيل الخروج', 'selected': 'المحدد', 'orderSummary': 'ملخص الطلبات', 'totalOrders': 'إجمالي الطلبات', 'pending': 'معلقة', 'confirmed': 'مؤكدة', 'tentative': 'مؤقتة', 'cancelled': 'ملغاة', 'orderDistribution': 'توزيع الطلبات', 'realStockInfo': 'معلومات المخزون الحقيقي', 'searchHint': 'بحث...', 'searchStockHint': 'بحث في المخزون...', 'noDataChart': 'لا توجد بيانات لعرض الرسم البياني.', 'failedToLoadOrders': 'فشل تحميل الطلبات:', 'failedToLoadStock': 'فشل تحميل المخزون:', 'errorFetchingOrders': 'خطأ في جلب الطلبات:', 'errorFetchingStock': 'خطأ في جلب المخزون:', 'retry': 'إعادة المحاولة', 'role': 'الدور', 'unknown': 'غير معروف', 'language': 'العربية', 'From': 'من', 'To': 'إلى', 'noStockFound': 'لم يتم العثور على عناصر مخزون مطابقة لبحثك.', 'loadingStock': 'جاري تحميل معلومات المخزون...',
+                'adminPanelTitle': 'لوحة التحكم', 'filterOrders': 'تصفية الطلبات', 'today': 'اليوم', 'thisMonth': 'هذا الشهر', 'customRange': 'نطاق مخصص', 'allOrders': 'جميع الطلبات', 'ordersButton': 'الطلبات', 'dashboardButton': 'لوحة القيادة', 'addProductButton': 'إضافة منتج', 'allProductsButton': 'جميع المنتجات', 'adminsButton': 'المسؤولون', 'stockButton': 'المخزون', 'pixelsButton': 'البكسلات', 'feesDeliveryButton': 'رسوم التوصيل', 'siteConfigButton': 'إعدادات الموقع', 'factureButton': 'فاتورة', 'charges': 'الرسوم', 'logoutButton': 'تسجيل الخروج', 'selected': 'المحدد', 'orderSummary': 'ملخص الطلبات', 'totalOrders': 'إجمالي الطلبات', 'pending': 'معلقة', 'confirmed': 'مؤكدة', 'dispatched': 'مرسلة', 'tentative': 'مؤقتة', 'cancelled': 'ملغاة', 'orderDistribution': 'توزيع الطلبات', 'realStockInfo': 'معلومات المخزون الحقيقي', 'searchHint': 'بحث...', 'searchStockHint': 'بحث في المخزون...', 'noDataChart': 'لا توجد بيانات لعرض الرسم البياني.', 'failedToLoadOrders': 'فشل تحميل الطلبات:', 'failedToLoadStock': 'فشل تحميل المخزون:', 'errorFetchingOrders': 'خطأ في جلب الطلبات:', 'errorFetchingStock': 'خطأ في جلب المخزون:', 'retry': 'إعادة المحاولة', 'role': 'الدور', 'unknown': 'غير معروف', 'language': 'العربية', 'From': 'من', 'To': 'إلى', 'noStockFound': 'لم يتم العثور على عناصر مخزون مطابقة لبحثك.', 'loadingStock': 'جاري تحميل معلومات المخزون...',
                 'aiPerformanceAnalysis': 'تحليل الأداء بالذكاء الاصطناعي', 'regenerate': 'إعادة إنشاء', 'loadingAnalysis': 'جاري إنشاء تحليل الذكاء الاصطناعي...', 'errorAnalysis': 'تعذر إنشاء تحليل الذكاء الاصطناعي.',
-                'dailyOrders': 'الطلبات اليومية', 'weekdays': ['الأحد', 'الإثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'],
+                'dailyOrders': 'الطلبات اليومية', 'weekdays': ['الأحد', 'الإثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'], 
+                'topProducts': 'أكثر المنتجات مبيعاً', 'topWilayas': 'أكثر الولايات طلباً', 'orders': 'طلبات', 'noTopProducts': 'لا توجد مبيعات منتجات في هذه الفترة.', 'noTopWilayas': 'لا توجد طلبات من أي ولاية في هذه الفترة.',
             },
         };
 
@@ -411,6 +437,7 @@
             return translations[appState.isEnglish ? 'en' : 'ar'][key] || key;
         }
 
+        // --- Data Fetching and Processing ---
         async function fetchAllDataAndAnalyze() {
             appState.isOrdersLoading = true;
             appState.isStockLoading = true;
@@ -436,7 +463,7 @@
                 if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
                 const fetchedOrders = await response.json();
                 processOrderData(fetchedOrders);
-                processDailyOrderData(fetchedOrders); // NEW: Process data for bar chart
+                processDailyOrderData(fetchedOrders);
             } catch (e) {
                 appState.orderErrorMessage = `${getTranslatedString('errorFetchingOrders')} ${e.message}`;
                 console.error('Error fetching orders:', e);
@@ -444,7 +471,9 @@
                 appState.isOrdersLoading = false;
                 renderOrderSummaryCard();
                 renderOrderPieChartCard();
-                renderDailyOrdersBarChartCard(); // NEW: Render bar chart
+                renderDailyOrdersBarChartCard();
+                renderTopProductsCard();
+                renderTopWilayasCard();
             }
         }
 
@@ -498,8 +527,11 @@
                 Data Summary:
                 - Total Orders: ${appState.totalOrders}
                 - Confirmed Orders: ${appState.confirmedOrders}
+                - Dispatched Orders: ${appState.dispatchedOrders}
                 - Pending Orders: ${appState.pendingOrders}
                 - Cancelled Orders: ${appState.cancelledOrders}
+                - Top Selling Product: ${appState.topProduct}
+                - Top Wilaya (Region) by Orders: ${appState.topWilaya}
                 - Top 5 products with the most stock:\n${stockSummary || 'N/A'}
 
                 Based on this data, provide a concise analysis with 3 key actionable recommendations.
@@ -519,7 +551,7 @@
             try {
                 const chatHistory = [{ role: "user", parts: [{ text: prompt }] }];
                 const payload = { contents: chatHistory };
-                const apiKey = "AIzaSyBikiEPT7buJnzVTPzkh_vfCNWfMMnBOs0"; 
+                const apiKey = ""; // API key will be injected by the environment
                 const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
                 
                 const response = await fetch(apiUrl, {
@@ -551,8 +583,23 @@
             }
         }
 
+        function getTopItems(items, count = 5) {
+            if (!items || items.length === 0) return [];
+            const frequencyMap = items.reduce((acc, item) => {
+                if (item) {
+                    acc[item] = (acc[item] || 0) + 1;
+                }
+                return acc;
+            }, {});
+            
+            return Object.entries(frequencyMap)
+                .sort(([, countA], [, countB]) => countB - countA)
+                .slice(0, count)
+                .map(([name, count]) => ({ name, count }));
+        }
+
         function processOrderData(ordersList) {
-            let pending = 0, confirmed = 0, tentative = 0, cancelled = 0;
+            let pending = 0, confirmed = 0, dispatched = 0, tentative = 0, cancelled = 0;
             const nowUtc = new Date();
             const todayUtcStart = new Date(Date.UTC(nowUtc.getUTCFullYear(), nowUtc.getUTCMonth(), nowUtc.getUTCDate()));
             const thisMonthUtcStart = new Date(Date.UTC(nowUtc.getUTCFullYear(), nowUtc.getUTCMonth(), 1));
@@ -585,22 +632,41 @@
                 }
             });
 
+            const productNames = [];
+            const wilayas = [];
+
             filteredOrders.forEach(order => {
                 const status = (order['status'] || 'unknown').toLowerCase();
                 if (status === 'pending') pending++;
                 else if (status === 'confirmed') confirmed++;
+                else if (status === 'dispatched') dispatched++;
                 else if (status === 'tentative') tentative++;
                 else if (status === 'cancelled') cancelled++;
+
+                if (order.products && Array.isArray(order.products)) {
+                    order.products.forEach(p => productNames.push(p.name));
+                }
+                if(order.wilaya) {
+                    wilayas.push(order.wilaya);
+                }
             });
 
             appState.totalOrders = filteredOrders.length;
             appState.pendingOrders = pending;
             appState.confirmedOrders = confirmed;
+            appState.dispatchedOrders = dispatched;
             appState.tentativeOrders = tentative;
             appState.cancelledOrders = cancelled;
+
+            const topProductsList = getTopItems(productNames, 5);
+            const topWilayasList = getTopItems(wilayas, 5);
+            
+            appState.topProducts = topProductsList;
+            appState.topWilayas = topWilayasList;
+            appState.topProduct = topProductsList.length > 0 ? topProductsList[0].name : 'N/A';
+            appState.topWilaya = topWilayasList.length > 0 ? topWilayasList[0].name : 'N/A';
         }
 
-        // NEW: Function to process data for the daily orders bar chart
         function processDailyOrderData(ordersList) {
             const dailyCounts = Array(7).fill(0); // 0 for Sun, 1 for Mon, etc.
             const today = new Date();
@@ -625,11 +691,14 @@
             appState.dailyOrderCounts = dailyCounts;
         }
 
+        // --- UI Rendering ---
         function renderAllCards() {
             renderOrderSummaryCard();
             renderOrderPieChartCard();
             renderDailyOrdersBarChartCard();
             renderRealStockInfoCard();
+            renderTopProductsCard();
+            renderTopWilayasCard();
             renderAIAnalysisCard();
         }
 
@@ -660,6 +729,8 @@
             document.querySelector('#order-summary-card h3').textContent = getTranslatedString('orderSummary');
             document.querySelector('#order-distribution-card h3').textContent = getTranslatedString('orderDistribution');
             document.querySelector('#real-stock-info-card h3').textContent = getTranslatedString('realStockInfo');
+            document.querySelector('#top-products-card h3').textContent = getTranslatedString('topProducts');
+            document.querySelector('#top-wilayas-card h3').textContent = getTranslatedString('topWilayas');
             document.querySelector('#daily-orders-card h3').textContent = getTranslatedString('dailyOrders');
             document.querySelector('#ai-analysis-card h3').textContent = getTranslatedString('aiPerformanceAnalysis');
             document.getElementById('real-stock-search').placeholder = getTranslatedString('searchStockHint');
@@ -690,15 +761,29 @@
                 contentDiv.innerHTML = `<div class="flex flex-col items-center justify-center text-red-500 p-4 text-center"><i class="fas fa-exclamation-triangle text-4xl mb-2"></i><p class="text-lg">${appState.orderErrorMessage}</p><button id="retry-orders-summary" class="mt-4 bg-blue-500 text-white px-4 py-2 rounded-lg shadow hover:bg-blue-600 transition duration-300"><i class="fas fa-sync-alt mr-2"></i>${getTranslatedString('retry')}</button></div>`;
                 document.getElementById('retry-orders-summary').onclick = fetchAllDataAndAnalyze;
             } else {
-                contentDiv.innerHTML = `<div class="w-full">${buildStatusRow(getTranslatedString('totalOrders'), appState.totalOrders, 'teal-700', true)}<hr class="my-4 border-gray-200">${buildStatusRow(getTranslatedString('pending'), appState.pendingOrders, 'indigo-600', false)}<hr class="my-4 border-gray-200">${buildStatusRow(getTranslatedString('confirmed'), appState.confirmedOrders, 'green-600', false)}<hr class="my-4 border-gray-200">${buildStatusRow(getTranslatedString('tentative'), appState.tentativeOrders, 'orange-600', false)}<hr class="my-4 border-gray-200">${buildStatusRow(getTranslatedString('cancelled'), appState.cancelledOrders, 'red-600', false)}</div>`;
+                contentDiv.innerHTML = `<div class="w-full">
+                    ${buildStatusRow(getTranslatedString('totalOrders'), appState.totalOrders, 'teal-700', true)}<hr class="my-3 border-gray-200">
+                    ${buildStatusRow(getTranslatedString('pending'), appState.pendingOrders, 'indigo-600', false)}<hr class="my-3 border-gray-200">
+                    ${buildStatusRow(getTranslatedString('confirmed'), appState.confirmedOrders, 'green-600', false)}<hr class="my-3 border-gray-200">
+                    ${buildStatusRow(getTranslatedString('dispatched'), appState.dispatchedOrders, 'blue-600', false)}<hr class="my-3 border-gray-200">
+                    ${buildStatusRow(getTranslatedString('tentative'), appState.tentativeOrders, 'orange-600', false)}<hr class="my-3 border-gray-200">
+                    ${buildStatusRow(getTranslatedString('cancelled'), appState.cancelledOrders, 'red-600', false)}
+                </div>`;
             }
         }
 
         function buildStatusRow(label, count, colorClass, isTotal) {
-            return `<div class="flex items-center py-2"><div class="w-4 h-4 rounded-md bg-${colorClass}"></div><span class="ml-3 flex-1 ${isTotal ? 'text-lg font-semibold' : 'text-base font-medium'} text-gray-800">${label}</span><span class="${isTotal ? 'text-lg' : 'text-base'} font-bold text-${colorClass}">${count}</span></div>`;
+            return `<div class="flex items-center py-1"><div class="w-4 h-4 rounded-md bg-${colorClass}"></div><span class="ml-3 flex-1 ${isTotal ? 'text-lg font-semibold' : 'text-base font-medium'} text-gray-800">${label}</span><span class="${isTotal ? 'text-lg' : 'text-base'} font-bold text-${colorClass}">${count}</span></div>`;
         }
 
-        const statusColors = { 'Pending': 'rgb(67, 56, 202)', 'Confirmed': 'rgb(22, 163, 74)', 'Tentative': 'rgb(234, 88, 12)', 'Cancelled': 'rgb(220, 38, 38)', 'Unknown': 'rgb(156, 163, 175)' };
+        const statusColors = { 
+            'Pending': 'rgb(79, 70, 229)', 
+            'Confirmed': 'rgb(22, 163, 74)', 
+            'Dispatched': 'rgb(37, 99, 235)',
+            'Tentative': 'rgb(234, 88, 12)', 
+            'Cancelled': 'rgb(220, 38, 38)', 
+            'Unknown': 'rgb(156, 163, 175)' 
+        };
 
         function renderOrderPieChartCard() {
             const contentDiv = document.getElementById('order-distribution-content');
@@ -718,6 +803,7 @@
             const dataMap = {};
             if (appState.pendingOrders > 0) dataMap[getTranslatedString('pending')] = appState.pendingOrders;
             if (appState.confirmedOrders > 0) dataMap[getTranslatedString('confirmed')] = appState.confirmedOrders;
+            if (appState.dispatchedOrders > 0) dataMap[getTranslatedString('dispatched')] = appState.dispatchedOrders;
             if (appState.tentativeOrders > 0) dataMap[getTranslatedString('tentative')] = appState.tentativeOrders;
             if (appState.cancelledOrders > 0) dataMap[getTranslatedString('cancelled')] = appState.cancelledOrders;
 
@@ -746,7 +832,6 @@
             });
         }
 
-        // NEW: Function to render the daily orders bar chart
         function renderDailyOrdersBarChartCard() {
             const contentDiv = document.getElementById('daily-orders-content');
             if (appState.dailyOrdersBarChartInstance) {
@@ -831,6 +916,40 @@
                 return;
             }
             contentDiv.innerHTML = `<div class="w-full text-left">${filteredStock.map(item => `<div class="bg-white p-3 rounded-lg shadow-sm mb-3 flex items-center justify-between"><div><h4 class="font-semibold text-gray-900">${item.name}</h4><p class="text-sm text-gray-600">Quantity: ${item.quantity}</p><p class="text-xs text-gray-500">Last Updated: ${item.lastUpdated}</p></div><i class="fas fa-cubes text-blue-500 text-2xl"></i></div>`).join('')}</div>`;
+        }
+
+        function renderTopProductsCard() {
+            const contentDiv = document.getElementById('top-products-content');
+            if (appState.isOrdersLoading) {
+                contentDiv.innerHTML = `<div class="flex flex-col items-center justify-center h-full text-gray-600"><div class="animate-spin rounded-full h-12 w-12 border-4 border-yellow-500 border-t-transparent"></div><p class="mt-4">Loading data...</p></div>`;
+                return;
+            }
+            if (appState.orderErrorMessage) {
+                 contentDiv.innerHTML = `<div class="text-center text-red-500 p-4"><i class="fas fa-exclamation-circle text-3xl mb-2"></i><p>Data unavailable</p></div>`;
+                return;
+            }
+            if (appState.topProducts.length === 0) {
+                contentDiv.innerHTML = `<div class="flex flex-col items-center justify-center h-full text-gray-600"><i class="fas fa-info-circle text-4xl mb-3"></i><p>${getTranslatedString('noTopProducts')}</p></div>`;
+                return;
+            }
+            contentDiv.innerHTML = `<div class="w-full text-left">${appState.topProducts.map(item => `<div class="bg-white p-3 rounded-lg shadow-sm mb-3 flex items-center justify-between"><div><h4 class="font-semibold text-gray-900">${item.name}</h4></div><span class="font-bold text-yellow-600">${item.count} ${getTranslatedString('orders')}</span></div>`).join('')}</div>`;
+        }
+        
+        function renderTopWilayasCard() {
+            const contentDiv = document.getElementById('top-wilayas-content');
+            if (appState.isOrdersLoading) {
+                contentDiv.innerHTML = `<div class="flex flex-col items-center justify-center h-full text-gray-600"><div class="animate-spin rounded-full h-12 w-12 border-4 border-green-600 border-t-transparent"></div><p class="mt-4">Loading data...</p></div>`;
+                return;
+            }
+            if (appState.orderErrorMessage) {
+                contentDiv.innerHTML = `<div class="text-center text-red-500 p-4"><i class="fas fa-exclamation-circle text-3xl mb-2"></i><p>Data unavailable</p></div>`;
+                return;
+            }
+            if (appState.topWilayas.length === 0) {
+                contentDiv.innerHTML = `<div class="flex flex-col items-center justify-center h-full text-gray-600"><i class="fas fa-info-circle text-4xl mb-3"></i><p>${getTranslatedString('noTopWilayas')}</p></div>`;
+                return;
+            }
+            contentDiv.innerHTML = `<div class="w-full text-left">${appState.topWilayas.map(item => `<div class="bg-white p-3 rounded-lg shadow-sm mb-3 flex items-center justify-between"><div><h4 class="font-semibold text-gray-900">${item.name}</h4></div><span class="font-bold text-green-700">${item.count} ${getTranslatedString('orders')}</span></div>`).join('')}</div>`;
         }
 
         function renderAIAnalysisCard() {

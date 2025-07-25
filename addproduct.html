@@ -207,6 +207,29 @@
                             </div>
                             <p id="error-base-price" class="text-red-500 text-xs italic mt-1 hidden"></p>
                         </div>
+                        
+                        <!-- ** NEW ** Original Price Input -->
+                        <div>
+                            <label for="ol-price" class="block text-gray-700 text-sm font-bold mb-2" id="label-ol-price"></label>
+                            <div class="relative">
+                                <input type="number" step="0.01" id="ol-price" name="olprice" class="w-full px-4 py-3 rounded-lg border border-gray-300 bg-gray-100 text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-700 focus:border-transparent transition duration-200" placeholder="" autocomplete="off">
+                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                    <i data-lucide="tag" class="w-5 h-5 text-gray-700"></i>
+                                </div>
+                            </div>
+                            <p id="error-ol-price" class="text-red-500 text-xs italic mt-1 hidden"></p>
+                        </div>
+
+                        <!-- ** NEW ** Promo Code Input -->
+                        <div>
+                            <label for="promo-code" class="block text-gray-700 text-sm font-bold mb-2" id="label-promo-code"></label>
+                            <div class="relative">
+                                <input type="text" id="promo-code" name="promocode" class="w-full px-4 py-3 rounded-lg border border-gray-300 bg-gray-100 text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-700 focus:border-transparent transition duration-200" placeholder="" autocomplete="off">
+                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                    <i data-lucide="percent" class="w-5 h-5 text-gray-700"></i>
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
                     <!-- Step 1: Product Variants -->
@@ -331,6 +354,10 @@
                 'example_100': 'Example: 100',
                 'base_price': 'Base Price (DZD)',
                 'example_1500_00': 'Example: 1500.00',
+                'original_price_optional': 'Original Price (Optional) (DZD)',
+                'example_2000_00': 'Example: 2000.00',
+                'promo_code_optional_main': 'Promo Code (Optional)',
+                'example_SUMMER25': 'Example: SUMMER25',
                 'product_variants': 'Product Variants',
                 'product_variants_colors_sizes_prices': 'Product Variants (Colors, Sizes, and Prices)',
                 'please_select_product_type_first': 'Please select product type in the first step first.',
@@ -346,8 +373,6 @@
                 'variant': 'Variant',
                 'price_for_variant_dzd': 'Price for Variant (DZD)',
                 'example_1450_00': 'Example: 1450.00',
-                'promo_code_optional': 'Promo Code (Optional)',
-                'example_discount10': 'Example: DISCOUNT10',
                 'selected_colors': 'Selected Colors',
                 'choose_colors': 'Choose Colors',
                 'sizes': 'Sizes',
@@ -399,6 +424,10 @@
                 'example_100': 'مثال: 100',
                 'base_price': 'السعر الأساسي (د.ج)',
                 'example_1500_00': 'مثال: 1500.00',
+                'original_price_optional': 'السعر الأصلي (اختياري) (د.ج)',
+                'example_2000_00': 'مثال: 2000.00',
+                'promo_code_optional_main': 'رمز العرض الترويجي (اختياري)',
+                'example_SUMMER25': 'مثال: SUMMER25',
                 'product_variants': 'متغيرات المنتج',
                 'product_variants_colors_sizes_prices': 'متغيرات المنتج (الألوان والأحجام والأسعار)',
                 'please_select_product_type_first': 'الرجاء اختيار نوع المنتج في الخطوة الأولى أولاً.',
@@ -414,8 +443,6 @@
                 'variant': 'المتغير',
                 'price_for_variant_dzd': 'السعر للمتغير (د.ج)',
                 'example_1450_00': 'مثال: 1450.00',
-                'promo_code_optional': 'رمز العرض الترويجي (اختياري)',
-                'example_discount10': 'مثال: خصم10',
                 'selected_colors': 'الألوان المختارة',
                 'choose_colors': 'اختر الألوان',
                 'sizes': 'الأحجام',
@@ -468,9 +495,11 @@
             description: '', // This will now hold HTML content from Quill
             quantity: '',
             price: '',
+            olprice: '', // ** NEW ** Original price
+            promocode: '', // ** NEW ** Promo code
             customOption: '',
             productType: null,
-            variants: [{ colors: [], sizes: [], price: '', promoCode: '' }],
+            variants: [{ colors: [], sizes: [], price: '' }], // ** MODIFIED ** Removed promoCode from variant
             images: [], // Array of File objects for product-level images
         };
         let isLoading = false;
@@ -497,6 +526,8 @@
         const descriptionEditorDiv = document.getElementById('description-editor'); // The div for Quill
         const quantityInput = document.getElementById('quantity');
         const basePriceInput = document.getElementById('base-price');
+        const olPriceInput = document.getElementById('ol-price'); // ** NEW **
+        const promoCodeInput = document.getElementById('promo-code'); // ** NEW **
 
         // Step 1 elements
         const variantsContainer = document.getElementById('variants-container');
@@ -667,7 +698,6 @@
             productNameInput.placeholder = AppStrings.get('example_tshirt');
 
             document.getElementById('label-description').textContent = AppStrings.get('detailed_description');
-            // Quill placeholder is set during initialization and doesn't update dynamically via API.
             if (quill) {
                 quill.root.dataset.placeholder = AppStrings.get('provide_detailed_description');
             }
@@ -677,6 +707,13 @@
 
             document.getElementById('label-base-price').textContent = AppStrings.get('base_price');
             basePriceInput.placeholder = AppStrings.get('example_1500_00');
+
+            // ** NEW **
+            document.getElementById('label-ol-price').textContent = AppStrings.get('original_price_optional');
+            olPriceInput.placeholder = AppStrings.get('example_2000_00');
+            document.getElementById('label-promo-code').textContent = AppStrings.get('promo_code_optional_main');
+            promoCodeInput.placeholder = AppStrings.get('example_SUMMER25');
+
 
             // Step 1 titles and buttons
             document.getElementById('variants-title').textContent = AppStrings.get('product_variants_colors_sizes_prices');
@@ -717,9 +754,11 @@
                 description: '',
                 quantity: '',
                 price: '',
+                olprice: '',
+                promocode: '',
                 customOption: '',
                 productType: null,
-                variants: [{ colors: [], sizes: [], price: '', promoCode: '' }],
+                variants: [{ colors: [], sizes: [], price: '' }],
                 images: [],
             };
             currentStep = 0;
@@ -730,6 +769,8 @@
             quill.setText(''); // Clear Quill editor
             quantityInput.value = '';
             basePriceInput.value = '';
+            olPriceInput.value = '';
+            promoCodeInput.value = '';
             customOptionInput.value = '';
             productTypeSelect.value = ''; // Reset dropdown
 
@@ -788,13 +829,12 @@
             hideError('description');
             hideError('quantity');
             hideError('base-price');
+            hideError('ol-price');
 
             if (!productData.productType) {
                 showError('product-type', AppStrings.get('please_select_product_type'));
                 isValid = false;
             }
-            // Validate Quill editor content
-            // Quill's getText() returns a newline for empty content, so check length > 1
             if (quill.getText().trim().length <= 0) {
                 showError('description', AppStrings.get('description_cannot_be_empty'));
                 isValid = false;
@@ -822,6 +862,16 @@
                 showError('base-price', AppStrings.get('price_must_be_greater_than_0'));
                 isValid = false;
             }
+            
+            const olprice = parseFloat(productData.olprice);
+            if (productData.olprice && isNaN(olprice)) {
+                showError('ol-price', AppStrings.get('enter_valid_price'));
+                isValid = false;
+            } else if (olprice < 0) {
+                showError('ol-price', AppStrings.get('price_must_be_greater_than_0'));
+                isValid = false;
+            }
+
             return isValid;
         }
 
@@ -1023,15 +1073,6 @@
                     <p id="error-variant-price-${index}" class="text-red-500 text-xs italic mt-1 hidden"></p>
                 </div>
                 <div>
-                    <label for="variant-promo-${index}" class="block text-gray-700 text-sm font-bold mb-2">${AppStrings.get('promo_code_optional')}</label>
-                    <div class="relative">
-                        <input type="text" id="variant-promo-${index}" name="variant_promo_${index}" class="w-full px-4 py-3 rounded-lg border border-gray-300 bg-gray-100 text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-700 focus:border-transparent transition duration-200" placeholder="${AppStrings.get('example_discount10')}" value="${variant.promoCode}" autocomplete="off">
-                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                            <i data-lucide="percent" class="w-5 h-5 text-gray-700"></i>
-                        </div>
-                    </div>
-                </div>
-                <div>
                     <label class="block text-gray-700 text-sm font-bold mb-2">${AppStrings.get('selected_colors')}</label>
                     <div class="flex flex-wrap gap-2 p-3 rounded-lg border border-gray-300 bg-gray-100 min-h-[40px]" id="variant-${index}-colors-display">
                         ${variant.colors.map(colorNameOrHex => {
@@ -1102,18 +1143,12 @@
          * Attaches event listeners to dynamically created variant elements.
          */
         function attachVariantEventListeners() {
-            // Price and Promo Code inputs
+            // Price inputs
             variantsContainer.querySelectorAll('input[id^="variant-price-"]').forEach(input => {
                 input.oninput = (e) => {
                     const index = parseInt(e.target.id.split('-')[2]);
                     productData.variants[index].price = e.target.value;
                     hideError(`variant-price-${index}`); // Hide error on input
-                };
-            });
-            variantsContainer.querySelectorAll('input[id^="variant-promo-"]').forEach(input => {
-                input.oninput = (e) => {
-                    const index = parseInt(e.target.id.split('-')[2]);
-                    productData.variants[index].promoCode = e.target.value;
                 };
             });
 
@@ -1123,7 +1158,7 @@
                     const index = parseInt(e.currentTarget.dataset.variantIndex);
                     productData.variants.splice(index, 1);
                     if (productData.variants.length === 0) {
-                        productData.variants.push({ colors: [], sizes: [], price: '', promoCode: '' }); // Ensure at least one
+                        productData.variants.push({ colors: [], sizes: [], price: '' }); // Ensure at least one
                     }
                     renderProductVariantsStep(); // Re-render all variants
                 };
@@ -1301,6 +1336,14 @@
             formData.append('price', productData.price);
             formData.append('custom_option', productData.customOption);
             formData.append('product_type', productData.productType || '');
+            
+            // ** NEW ** Append optional fields if they have values
+            if (productData.olprice) {
+                formData.append('olprice', productData.olprice);
+            }
+            if (productData.promocode) {
+                formData.append('promocode', productData.promocode);
+            }
 
             // Only add variants if product type is 'Clothes' or 'Shoes'
             if (productData.productType === 'Clothes' || productData.productType === 'Shoes') {
@@ -1308,7 +1351,6 @@
                     colors: v.colors,
                     sizes: v.sizes,
                     price: parseFloat(v.price), // Ensure price is number
-                    promo_code: v.promoCode || null // Handle empty promo code
                 }))));
             } else {
                 formData.append('variants', JSON.stringify([]));
@@ -1409,16 +1451,19 @@
                 productData.productType = e.target.value;
                 hideError('product-type');
                 // Reset variants when product type changes
-                productData.variants = [{ colors: [], sizes: [], price: '', promoCode: '' }];
+                productData.variants = [{ colors: [], sizes: [], price: '' }];
                 renderProductVariantsStep(); // Re-render to reflect changes in variant section
             });
             productNameInput.addEventListener('input', (e) => { productData.name = e.target.value; hideError('product-name'); });
             quantityInput.addEventListener('input', (e) => { productData.quantity = e.target.value; hideError('quantity'); });
             basePriceInput.addEventListener('input', (e) => { productData.price = e.target.value; hideError('base-price'); });
+            olPriceInput.addEventListener('input', (e) => { productData.olprice = e.target.value; hideError('ol-price'); });
+            promoCodeInput.addEventListener('input', (e) => { productData.promocode = e.target.value; });
+
 
             // Step 1 - Add Variant Button
             addVariantButton.addEventListener('click', () => {
-                productData.variants.push({ colors: [], sizes: [], price: '', promoCode: '' });
+                productData.variants.push({ colors: [], sizes: [], price: '' });
                 renderProductVariantsStep();
             });
 

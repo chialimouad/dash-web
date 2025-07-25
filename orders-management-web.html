@@ -9,6 +9,7 @@
     <script type="text/javascript"
         src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js">
     </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <style>
         /* Custom styles to override or extend Tailwind if needed */
         body {
@@ -149,8 +150,6 @@
         <span id="messageText"></span>
     </div>
 
-    <!-- Removed Splash Screen -->
-
     <div id="loginPage" class="hidden flex-1 flex flex-row">
         <div class="hidden md:flex flex-1 bg-gray-200 items-center justify-center">
             <i class="fa-solid fa-bag-shopping text-gray-800 text-9xl"></i>
@@ -228,8 +227,8 @@
         <header class="bg-white shadow-md p-4 flex items-center justify-between">
             <h1 class="text-xl font-bold text-gray-800">Orders Management</h1>
             <div class="flex items-center space-x-2">
-                <button id="yalitecSettingsBtn" class="p-2 rounded-full hover:bg-gray-100 transition-colors duration-200" title="Yalitec API Settings">
-                    <i class="fa-solid fa-gear text-gray-500 text-lg"></i>
+                <button id="deliverySettingsBtn" class="p-2 rounded-full hover:bg-gray-100 transition-colors duration-200" title="Delivery Company Settings">
+                    <i class="fa-solid fa-truck text-gray-500 text-lg"></i>
                 </button>
                 <button id="generatePdfBtn" class="p-2 rounded-full hover:bg-gray-100 transition-colors duration-200" title="Generate PDF of Filtered Orders">
                     <i class="fa-solid fa-file-pdf text-red-600 text-lg"></i>
@@ -275,9 +274,8 @@
                     <button data-filter-type="status" data-filter-value="cancelled" class="filter-button bg-gray-200 text-gray-800 px-4 py-2 rounded-lg font-semibold hover:bg-gray-300 transition-colors duration-200">Cancelled (<span id="count-cancelled">0</span>)</button>
                     <button data-filter-type="status" data-filter-value="tentative" class="filter-button bg-gray-200 text-gray-800 px-4 py-2 rounded-lg font-semibold hover:bg-gray-300 transition-colors duration-200">Tentative (<span id="count-tentative">0</span>)</button>
                     <button data-filter-type="status" data-filter-value="dispatched" class="filter-button bg-gray-200 text-gray-800 px-4 py-2 rounded-lg font-semibold hover:bg-gray-300 transition-colors duration-200">Dispatched (<span id="count-dispatched">0</span>)</button>
-                    <!-- New Status Buttons -->
                     <button data-filter-type="status" data-filter-value="delivered" class="filter-button bg-gray-200 text-gray-800 px-4 py-2 rounded-lg font-semibold hover:bg-gray-300 transition-colors duration-200">Delivered (<span id="count-delivered">0</span>)</button>
-                    <button data-filter-type="status" data-filter-value="backs" class="filter-button bg-gray-200 text-gray-800 px-4 py-2 rounded-lg font-semibold hover:bg-gray-300 transition-colors duration-200">Backs (<span id="count-backs">0</span>)</button>
+                    <button data-filter-type="status" data-filter-value="returned" class="filter-button bg-gray-200 text-gray-800 px-4 py-2 rounded-lg font-semibold hover:bg-gray-300 transition-colors duration-200">Returned (<span id="count-returned">0</span>)</button>
                 </div>
             </div>
 
@@ -294,16 +292,27 @@
         </main>
     </div>
 
-    <div id="yalitecSettingsModal" class="modal-overlay">
+    <!-- Delivery Settings Modal -->
+    <div id="deliverySettingsModal" class="modal-overlay">
         <div class="modal-content w-full max-w-md">
-            <h3 class="text-xl font-bold mb-4">Enter Yalitec API Credentials</h3>
+            <h3 class="text-xl font-bold mb-4">Delivery Company Settings</h3>
             <div class="space-y-4">
-                <input type="text" id="yalitecApiIdInput" placeholder="Yalitec API ID" class="w-full p-2 border rounded-lg">
-                <input type="password" id="yalitecApiTokenInput" placeholder="Yalitec API Token" class="w-full p-2 border rounded-lg">
+                <div>
+                    <label for="deliveryCompanySelect" class="block text-sm font-medium text-gray-700 mb-1">Select Provider</label>
+                    <select id="deliveryCompanySelect" class="w-full dropdown-dark">
+                        <option value="yalidine">Yalidine</option>
+                        <option value="yalitec">Yali-tec</option>
+                        <option value="maystro">Maystro</option>
+                        <option value="zrexpress">ZR Express</option>
+                    </select>
+                </div>
+                <div id="apiFieldsContainer" class="space-y-4 border-t pt-4">
+                    <!-- API fields will be dynamically inserted here -->
+                </div>
             </div>
             <div class="mt-6 flex justify-end space-x-2">
-                <button id="cancelYalitecSettings" class="px-4 py-2 bg-gray-200 rounded-lg hover:bg-gray-300">Cancel</button>
-                <button id="saveYalitecSettings" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">Save & Continue</button>
+                <button id="cancelDeliverySettings" class="px-4 py-2 bg-gray-200 rounded-lg hover:bg-gray-300">Cancel</button>
+                <button id="saveDeliverySettings" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">Save</button>
             </div>
         </div>
     </div>
@@ -332,7 +341,7 @@
                 <input type="text" id="editPhoneNumber" placeholder="Phone Number" class="w-full p-2 border rounded-lg">
                 <input type="text" id="editWilaya" placeholder="Wilaya" class="w-full p-2 border rounded-lg">
                 <input type="text" id="editCommune" placeholder="Commune" class="w-full p-2 border rounded-lg">
-                <input type="text" id="editAddress" placeholder="Address" class="w-full p-2 border rounded-lg"> <!-- Added Address field -->
+                <input type="text" id="editAddress" placeholder="Address" class="w-full p-2 border rounded-lg">
                 <textarea id="editNotes" placeholder="Agent Notes" class="w-full p-2 border rounded-lg h-24 notes-input"></textarea>
                 <div id="assignedToDropdownContainer" class="hidden">
                     <label for="editAssignedTo" class="block text-sm font-medium text-gray-700 mb-1">Assigned Agent</label>
@@ -395,7 +404,6 @@
                         <span class="text-lg font-medium">Dispatched Orders</span>
                         <span id="reportDispatched" class="ml-auto text-xl font-bold text-blue-600">0</span>
                     </div>
-                    <!-- New Report Fields -->
                     <div class="flex items-center mb-2">
                         <i class="fa-solid fa-box-open text-teal-600 text-2xl mr-3"></i>
                         <span class="text-lg font-medium">Delivered Orders</span>
@@ -403,8 +411,8 @@
                     </div>
                     <div class="flex items-center">
                         <i class="fa-solid fa-undo-alt text-purple-600 text-2xl mr-3"></i>
-                        <span class="text-lg font-medium">Returned (Backs) Orders</span>
-                        <span id="reportBacks" class="ml-auto text-xl font-bold text-purple-600">0</span>
+                        <span class="text-lg font-medium">Returned Orders</span>
+                        <span id="reportReturned" class="ml-auto text-xl font-bold text-purple-600">0</span>
                     </div>
                 </div>
             </div>
@@ -442,9 +450,6 @@
         let availableAgents = [];
         let currentUserRole = 'guest';
         let currentUserId = null;
-        let yalitecApiId = null;
-        let yalitecApiToken = null;
-        let areYalitecApiCredentialsLoaded = false;
         let isImportingFromShopify = false;
 
         let currentDateFilter = 'allTime'; // Default date filter
@@ -452,11 +457,43 @@
         let customEndDate = null;
 
         const shopOriginWilayaName = 'Batna';
-        const shopOriginWilayaId = 5; // Unused in JS version, but kept for context
+
+        // --- Delivery Provider Configuration ---
+        const deliveryProviders = {
+            'yalidine': {
+                name: 'Yalidine',
+                apiUrl: 'https://api.yalidine.com/v1/parcels/',
+                fields: {
+                    'yalidine_api_id': { label: 'Yalidine API ID', type: 'text' },
+                    'yalidine_api_token': { label: 'Yalidine API Token', type: 'password' }
+                }
+            },
+            'yalitec': {
+                name: 'Yali-tec',
+                apiUrl: 'https://api.yalitec.me/v1/parcels/',
+                fields: {
+                    'yalitec_api_id': { label: 'Yali-tec API ID', type: 'text' },
+                    'yalitec_api_token': { label: 'Yali-tec API Token', type: 'password' }
+                }
+            },
+            'maystro': {
+                name: 'Maystro',
+                apiUrl: 'https://orders-management.maystro-delivery.com/api/orders/',
+                fields: {
+                    'maystro_store_key': { label: 'Maystro Store Key', type: 'password' }
+                }
+            },
+            'zrexpress': {
+                name: 'ZR Express',
+                apiUrl: 'https://zrexpress.com/api/', // Placeholder URL
+                fields: {
+                    'zrexpress_api_key': { label: 'ZR Express API Key', type: 'password' }
+                }
+            }
+        };
+        let currentDeliveryProvider = 'yalidine'; // Default provider
 
         // --- DOM Elements ---
-        // The splashScreen element is removed from HTML, so this will be null.
-        const splashScreen = document.getElementById('splashScreen'); 
         const loginPage = document.getElementById('loginPage');
         const contactSupportPage = document.getElementById('contactSupportPage');
         const ordersScreen = document.getElementById('ordersScreen');
@@ -470,11 +507,11 @@
         const noOrdersMessage = document.getElementById('noOrdersMessage');
 
         // Modals
-        const yalitecSettingsModal = document.getElementById('yalitecSettingsModal');
-        const yalitecApiIdInput = document.getElementById('yalitecApiIdInput');
-        const yalitecApiTokenInput = document.getElementById('yalitecApiTokenInput');
-        const cancelYalitecSettings = document.getElementById('cancelYalitecSettings');
-        const saveYalitecSettings = document.getElementById('saveYalitecSettings');
+        const deliverySettingsModal = document.getElementById('deliverySettingsModal');
+        const deliveryCompanySelect = document.getElementById('deliveryCompanySelect');
+        const apiFieldsContainer = document.getElementById('apiFieldsContainer');
+        const cancelDeliverySettings = document.getElementById('cancelDeliverySettings');
+        const saveDeliverySettings = document.getElementById('saveDeliverySettings');
 
         const shopifySettingsModal = document.getElementById('shopifySettingsModal');
         const shopifyStoreNameInput = document.getElementById('shopifyStoreNameInput');
@@ -490,7 +527,7 @@
         const editPhoneNumber = document.getElementById('editPhoneNumber');
         const editWilaya = document.getElementById('editWilaya');
         const editCommune = document.getElementById('editCommune');
-        const editAddress = document.getElementById('editAddress'); // Get the new address field
+        const editAddress = document.getElementById('editAddress');
         const editNotes = document.getElementById('editNotes');
         const assignedToDropdownContainer = document.getElementById('assignedToDropdownContainer');
         const editAssignedTo = document.getElementById('editAssignedTo');
@@ -508,8 +545,8 @@
         const reportTentative = document.getElementById('reportTentative');
         const reportCancelled = document.getElementById('reportCancelled');
         const reportDispatched = document.getElementById('reportDispatched');
-        const reportDelivered = document.getElementById('reportDelivered'); // New report element
-        const reportBacks = document.getElementById('reportBacks');       // New report element
+        const reportDelivered = document.getElementById('reportDelivered');
+        const reportReturned = document.getElementById('reportReturned');
         const reportDateRange = document.getElementById('reportDateRange');
         const closeReportModal = document.getElementById('closeReportModal');
 
@@ -520,7 +557,7 @@
         const closeAgentReportModal = document.getElementById('closeAgentReportModal');
 
         // Buttons in AppBar
-        const yalitecSettingsBtn = document.getElementById('yalitecSettingsBtn');
+        const deliverySettingsBtn = document.getElementById('deliverySettingsBtn');
         const generatePdfBtn = document.getElementById('generatePdfBtn');
         const viewReportBtn = document.getElementById('viewReportBtn');
         const agentReportBtn = document.getElementById('agentReportBtn');
@@ -534,11 +571,6 @@
 
         // --- Utility Functions ---
 
-        /**
-         * Displays a snackbar-like message.
-         * @param {string} message The message to display.
-         * @param {boolean} isError True if it's an error message, false for success.
-         */
         function showMessage(message, isError = false) {
             messageText.textContent = message;
             messageBox.classList.remove('hidden', 'error', 'success');
@@ -554,32 +586,17 @@
             setTimeout(() => {
                 messageBox.classList.remove('show');
                 messageBox.classList.add('hidden');
-            }, 3000); // Hide after 3 seconds
+            }, 4000); // Increased timeout for better readability
         }
 
-        /**
-         * Shows a modal overlay.
-         * @param {HTMLElement} modalElement The modal div element.
-         */
         function showModal(modalElement) {
-            modalElement.classList.remove('hidden');
             modalElement.classList.add('show');
         }
 
-        /**
-         * Hides a modal overlay.
-         * @param {HTMLElement} modalElement The modal div element.
-         */
         function hideModal(modalElement) {
             modalElement.classList.remove('show');
-            modalElement.classList.add('hidden');
         }
 
-        /**
-         * Gets the appropriate text color for an order status.
-         * @param {string} status The order status.
-         * @returns {string} Tailwind CSS text color class.
-         */
         function getStatusColorClass(status) {
             switch (status) {
                 case 'confirmed': return 'text-green-800';
@@ -587,17 +604,12 @@
                 case 'tentative': return 'text-orange-800';
                 case 'pending': return 'text-indigo-800';
                 case 'dispatched': return 'text-blue-800';
-                case 'delivered': return 'text-teal-800'; // New color for delivered
-                case 'backs': return 'text-purple-800';   // New color for backs
+                case 'delivered': return 'text-teal-800';
+                case 'returned': return 'text-purple-800';
                 default: return 'text-gray-800';
             }
         }
 
-        /**
-         * Gets the appropriate background color for an order status badge.
-         * @param {string} status The order status.
-         * @returns {string} Tailwind CSS background color class.
-         */
         function getStatusBgColorClass(status) {
             switch (status) {
                 case 'confirmed': return 'bg-green-100';
@@ -605,23 +617,16 @@
                 case 'tentative': return 'bg-orange-100';
                 case 'pending': return 'bg-indigo-100';
                 case 'dispatched': return 'bg-blue-100';
-                case 'delivered': return 'bg-teal-100'; // New background for delivered
-                case 'backs': return 'bg-purple-100';   // New background for backs
+                case 'delivered': return 'bg-teal-100';
+                case 'returned': return 'bg-purple-100';
                 default: return 'bg-gray-100';
             }
         }
 
-        /**
-         * Formats a date string to 'YYYY-MM-DD HH:MM'.
-         * @param {string} dateString The ISO date string.
-         * @returns {string} Formatted date and time.
-         */
         function formatDateTime(dateString) {
             try {
                 const date = new Date(dateString);
-                if (isNaN(date.getTime())) {
-                    return 'N/A';
-                }
+                if (isNaN(date.getTime())) return 'N/A';
                 const year = date.getFullYear();
                 const month = String(date.getMonth() + 1).padStart(2, '0');
                 const day = String(date.getDate()).padStart(2, '0');
@@ -636,15 +641,9 @@
 
         // --- Authentication and User Management ---
 
-        /**
-         * Loads current user role and ID from localStorage.
-         */
         function loadCurrentUserRole() {
             currentUserRole = localStorage.getItem('role') || 'guest';
             currentUserId = localStorage.getItem('id');
-            console.log(`DEBUG: Loaded current user role: ${currentUserRole}, ID: ${currentUserId}`);
-
-            // Show/hide admin-specific elements
             if (currentUserRole === 'admin') {
                 assignedToDropdownContainer.classList.remove('hidden');
             } else {
@@ -652,99 +651,85 @@
             }
         }
 
-        /**
-         * Fetches JWT token from localStorage.
-         * @returns {string | null} The JWT token or null.
-         */
         function getTokenFromPrefs() {
             return localStorage.getItem('token');
         }
 
-        /**
-         * Handles unauthorized access by clearing user data and navigating to login.
-         */
         function handleUnauthorizedAccess() {
             showMessage('Your session has expired or is invalid. Please log in again.', true);
-            localStorage.clear(); // Clear all user-related data
+            localStorage.clear();
             showScreen('loginPage');
         }
 
-        // --- Yalitec API Credentials Management ---
+        // --- Delivery Provider Credentials Management ---
 
-        /**
-         * Loads Yalitec API credentials from localStorage.
-         */
-        function loadYalitecApiCredentials() {
-            yalitecApiId = localStorage.getItem('yalitec_api_id');
-            yalitecApiToken = localStorage.getItem('yalitec_api_token');
-            areYalitecApiCredentialsLoaded = (yalitecApiId !== null && yalitecApiToken !== null && yalitecApiId.length > 0 && yalitecApiToken.length > 0);
-            if (areYalitecApiCredentialsLoaded) {
-                console.log('DEBUG: Yalitec API credentials loaded successfully from localStorage.');
-            } else {
-                console.log('DEBUG: Yalitec API credentials not found or incomplete in localStorage.');
+        function loadDeliveryCredentials() {
+            currentDeliveryProvider = localStorage.getItem('current_delivery_provider') || 'yalidine';
+            // Each provider's credentials are now loaded into the deliveryProviders object
+            for (const providerKey in deliveryProviders) {
+                const provider = deliveryProviders[providerKey];
+                for (const fieldKey in provider.fields) {
+                    provider.fields[fieldKey].value = localStorage.getItem(fieldKey) || '';
+                }
             }
         }
 
-        /**
-         * Saves Yalitec API credentials to localStorage.
-         * @param {string} apiId
-         * @param {string} apiToken
-         */
-        function saveYalitecApiCredentials(apiId, apiToken) {
-            localStorage.setItem('yalitec_api_id', apiId);
-            localStorage.setItem('yalitec_api_token', apiToken);
-            yalitecApiId = apiId;
-            yalitecApiToken = apiToken;
-            areYalitecApiCredentialsLoaded = true;
-            showMessage('Yalitec API credentials saved successfully!', false);
+        function saveDeliveryCredentials() {
+            const providerKey = deliveryCompanySelect.value;
+            localStorage.setItem('current_delivery_provider', providerKey);
+            currentDeliveryProvider = providerKey;
+
+            const provider = deliveryProviders[providerKey];
+            let allFieldsSaved = true;
+            for (const fieldKey in provider.fields) {
+                const input = document.getElementById(`api-field-${fieldKey}`);
+                if (input.value) {
+                    localStorage.setItem(fieldKey, input.value);
+                    provider.fields[fieldKey].value = input.value;
+                } else {
+                    allFieldsSaved = false;
+                }
+            }
+
+            if (allFieldsSaved) {
+                showMessage(`${provider.name} API credentials saved!`, false);
+                hideModal(deliverySettingsModal);
+            } else {
+                showMessage(`Please fill in all fields for ${provider.name}.`, true);
+            }
         }
 
-        /**
-         * Prompts the user to enter Yalitec API credentials.
-         * @returns {Promise<boolean>} True if credentials were successfully entered, false otherwise.
-         */
-        async function promptForYalitecCredentials() {
-            yalitecApiIdInput.value = yalitecApiId || '';
-            yalitecApiTokenInput.value = yalitecApiToken || '';
-            showModal(yalitecSettingsModal);
+        function openDeliverySettingsModal() {
+            deliveryCompanySelect.value = currentDeliveryProvider;
+            updateApiFields(currentDeliveryProvider);
+            showModal(deliverySettingsModal);
+        }
 
-            return new Promise(resolve => {
-                const saveHandler = async () => {
-                    if (yalitecApiIdInput.value.trim() && yalitecApiTokenInput.value.trim()) {
-                        await saveYalitecApiCredentials(yalitecApiIdInput.value.trim(), yalitecApiTokenInput.value.trim());
-                        hideModal(yalitecSettingsModal);
-                        resolve(true);
-                    } else {
-                        showMessage('Both API ID and API Token are required.', true);
-                    }
-                };
-                const cancelHandler = () => {
-                    hideModal(yalitecSettingsModal);
-                    resolve(false);
-                };
+        function updateApiFields(providerKey) {
+            apiFieldsContainer.innerHTML = '';
+            const provider = deliveryProviders[providerKey];
 
-                saveYalitecSettings.onclick = saveHandler;
-                cancelYalitecSettings.onclick = cancelHandler;
-            });
+            for (const fieldKey in provider.fields) {
+                const field = provider.fields[fieldKey];
+                const value = localStorage.getItem(fieldKey) || '';
+                const inputHtml = `
+                    <div>
+                        <label for="api-field-${fieldKey}" class="block text-sm font-medium text-gray-700">${field.label}</label>
+                        <input type="${field.type}" id="api-field-${fieldKey}" value="${value}" class="text-input-dark w-full mt-1" placeholder="${field.label}">
+                    </div>
+                `;
+                apiFieldsContainer.insertAdjacentHTML('beforeend', inputHtml);
+            }
         }
 
         // --- Shopify API Credentials Management ---
 
-        /**
-         * Loads Shopify API credentials from localStorage.
-         */
         function loadShopifyApiCredentials() {
             ShopifyApiHelper.storeName = localStorage.getItem('shopify_store_name');
             ShopifyApiHelper.apiKey = localStorage.getItem('shopify_api_key');
             ShopifyApiHelper.apiPassword = localStorage.getItem('shopify_api_password');
         }
 
-        /**
-         * Saves Shopify API credentials to localStorage.
-         * @param {string} storeName
-         * @param {string} apiKey
-         * @param {string} password
-         */
         async function saveShopifyCredentials(storeName, apiKey, password) {
             localStorage.setItem('shopify_store_name', storeName);
             localStorage.setItem('shopify_api_key', apiKey);
@@ -755,10 +740,6 @@
             showMessage('Shopify API credentials saved successfully!', false);
         }
 
-        /**
-         * Prompts the user to enter Shopify API credentials.
-         * @returns {Promise<boolean>} True if credentials were successfully entered, false otherwise.
-         */
         async function promptForShopifyCredentials() {
             shopifyStoreNameInput.value = localStorage.getItem('shopify_store_name') || '';
             shopifyApiKeyInput.value = localStorage.getItem('shopify_api_key') || '';
@@ -785,7 +766,6 @@
             });
         }
 
-        // --- Shopify API Helper (Simplified for client-side) ---
         const ShopifyApiHelper = {
             storeName: null,
             apiKey: null,
@@ -795,48 +775,26 @@
                 if (!this.storeName || !this.apiKey || !this.apiPassword) {
                     throw new Error('Shopify API credentials are not set.');
                 }
-
                 let url = `https://${this.storeName}.myshopify.com/admin/api/2023-10/orders.json?status=any`;
-
-                if (createdAtMin) {
-                    url += `&created_at_min=${createdAtMin.toISOString()}`;
-                }
-                if (createdAtMax) {
-                    url += `&created_at_max=${createdAtMax.toISOString()}`;
-                }
+                if (createdAtMin) url += `&created_at_min=${createdAtMin.toISOString()}`;
+                if (createdAtMax) url += `&created_at_max=${createdAtMax.toISOString()}`;
                 if (status && status !== 'all') {
-                    // Shopify status mapping might be different, simplify for example
-                    // For example, 'pending' in your app might map to 'unfulfilled' or 'pending' financial status in Shopify
-                    // This is a simplification; a real integration would need careful mapping.
                     if (status === 'confirmed') url += '&fulfillment_status=fulfilled';
-                    else if (status === 'cancelled') url += '&financial_status=refunded'; // Or 'voided'
-                    else if (status === 'pending') url += '&financial_status=pending'; // Or 'unfulfilled'
+                    else if (status === 'cancelled') url += '&financial_status=refunded';
+                    else if (status === 'pending') url += '&financial_status=pending';
                 }
-
-                // Basic Auth header for Shopify Private App (Legacy)
-                // For modern Shopify apps, you'd use OAuth or a proxy.
                 const headers = new Headers();
                 headers.set('Authorization', 'Basic ' + btoa(`${this.apiKey}:${this.apiPassword}`));
                 headers.set('Content-Type', 'application/json');
-
-                console.log("Fetching Shopify orders from URL:", url);
-
                 const response = await fetch(url, { headers: headers });
-
                 if (!response.ok) {
                     const errorText = await response.text();
                     throw new Error(`Shopify API error: ${response.status} - ${errorText}`);
                 }
-
                 return await response.json();
             }
         };
 
-        /**
-         * Converts Shopify order format to your app's format.
-         * @param {Array<Object>} shopifyOrders
-         * @returns {Array<Object>} Converted orders.
-         */
         function convertShopifyOrders(shopifyOrders) {
             return shopifyOrders.map(shopifyOrder => {
                 const fullName = `${shopifyOrder.customer?.first_name || ''} ${shopifyOrder.customer?.last_name || ''}`.trim();
@@ -846,7 +804,6 @@
                 const wilaya = shopifyOrder.shipping_address?.province || '';
                 const totalPrice = parseFloat(shopifyOrder.total_price || '0.00').toFixed(2);
                 const createdAt = shopifyOrder.created_at || new Date().toISOString();
-
                 return {
                     _id: shopifyOrder.id.toString(),
                     fullName: fullName,
@@ -862,55 +819,38 @@
                         quantity: item.quantity,
                         price: item.price,
                         color: item.variant_title || 'N/A',
-                        size: 'N/A', // You might need to parse this from variant_title
+                        size: 'N/A',
                     })),
                 };
             });
         }
 
-        /**
-         * Maps Shopify status to your app's status.
-         * @param {string} shopifyStatus
-         * @returns {string} Your app's status.
-         */
         function mapShopifyStatus(shopifyStatus) {
             switch (shopifyStatus?.toLowerCase()) {
                 case 'paid':
-                case 'fulfilled':
-                    return 'confirmed';
-                case 'pending':
-                    return 'pending';
-                case 'cancelled':
-                    return 'cancelled';
-                case 'partially_fulfilled':
-                    return 'tentative';
-                default:
-                    return 'pending';
+                case 'fulfilled': return 'confirmed';
+                case 'pending': return 'pending';
+                case 'cancelled': return 'cancelled';
+                case 'partially_fulfilled': return 'tentative';
+                default: return 'pending';
             }
         }
 
-        /**
-         * Imports orders from Shopify.
-         */
         async function importFromShopify() {
             const hasCredentials = localStorage.getItem('shopify_api_key') && localStorage.getItem('shopify_api_password');
-
             if (!hasCredentials) {
                 const credentialsEntered = await promptForShopifyCredentials();
                 if (!credentialsEntered) return;
             }
-
             isImportingFromShopify = true;
             importShopifyIcon.classList.remove('fa-cloud-arrow-down');
             importShopifyIcon.classList.add('fa-spinner', 'fa-spin');
-
             try {
                 let startDate = null;
                 let endDate = new Date();
-
                 if (currentDateFilter === 'today') {
                     startDate = new Date();
-                    startDate.setDate(startDate.getDate() - 1); // Shopify uses created_at_min
+                    startDate.setDate(startDate.getDate() - 1);
                 } else if (currentDateFilter === 'thisWeek') {
                     startDate = new Date();
                     startDate.setDate(startDate.getDate() - 7);
@@ -921,22 +861,16 @@
                     startDate = customStartDate;
                     endDate = customEndDate || new Date();
                 }
-
                 const shopifyOrders = await ShopifyApiHelper.fetchShopifyOrders({
                     createdAtMin: startDate,
                     createdAtMax: endDate,
                     status: currentFilter === 'all' ? null : currentFilter,
                 });
-
                 const convertedOrders = convertShopifyOrders(shopifyOrders.orders);
-
-                // Simple merge: add new orders, avoid duplicates by ID
                 const existingOrderIds = new Set(allOrders.map(o => o._id));
                 const newUniqueOrders = convertedOrders.filter(o => !existingOrderIds.has(o._id));
-
                 allOrders = [...allOrders, ...newUniqueOrders];
                 applyAllFilters();
-
                 showMessage(`Successfully imported ${newUniqueOrders.length} new orders from Shopify!`, false);
             } catch (e) {
                 showMessage(`Error importing from Shopify: ${e.message}`, true);
@@ -948,12 +882,8 @@
             }
         }
 
-
         // --- Order Data Management ---
 
-        /**
-         * Loads order notes from localStorage.
-         */
         function loadOrderNotes() {
             const notesJson = localStorage.getItem('orderNotes');
             if (notesJson) {
@@ -966,22 +896,15 @@
             }
         }
 
-        /**
-         * Saves local order notes to localStorage.
-         */
         function saveOrderNotes() {
             localStorage.setItem('orderNotes', JSON.stringify(orderNotes));
         }
 
-        /**
-         * Fetches all orders from the API.
-         */
         async function fetchOrders() {
             isLoading = true;
             loadingIndicator.classList.remove('hidden');
-            ordersList.innerHTML = ''; // Clear current orders
+            ordersList.innerHTML = '';
             noOrdersMessage.classList.add('hidden');
-
             try {
                 const response = await fetch('https://sheeka.onrender.com/orders');
                 if (!response.ok) {
@@ -992,19 +915,14 @@
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
                 const fetchedOrders = await response.json();
-
-                // Process totalPrice for each order. Prioritize 'tradingPrice' if available.
                 fetchedOrders.forEach(order => {
                     if (order.tradingPrice && typeof order.tradingPrice === 'number' && order.tradingPrice > 0) {
-                        // Use the tradingPrice from the backend if it's a valid number
                         order.totalPrice = order.tradingPrice.toFixed(2);
                     } else {
-                        // Otherwise, calculate it from the products array as a fallback
                         let calculatedTotalPrice = 0.0;
                         if (order.products && Array.isArray(order.products)) {
                             order.products.forEach(productItem => {
-                                // Add a check to ensure productItem is not null
-                                if (productItem) { 
+                                if (productItem) {
                                     const price = parseFloat(productItem.price || '0.0') || 0.0;
                                     const quantity = parseInt(productItem.quantity || '0') || 0;
                                     calculatedTotalPrice += price * quantity;
@@ -1014,14 +932,11 @@
                         order.totalPrice = calculatedTotalPrice.toFixed(2);
                     }
                 });
-
-                // Sort by createdAt descending (newest first)
                 fetchedOrders.sort((a, b) => {
                     const dateA = new Date(a.createdAt || '1970-01-01T00:00:00Z').getTime();
                     const dateB = new Date(b.createdAt || '1970-01-01T00:00:00Z').getTime();
                     return dateB - dateA;
                 });
-
                 allOrders = fetchedOrders;
                 lastFetchedOrderIds = new Set(allOrders.map(order => order._id.toString()));
                 applyAllFilters();
@@ -1034,18 +949,12 @@
             }
         }
 
-        /**
-         * Applies all active filters (date, status, search, product name, and role-based assignment)
-         * and updates the displayed orders and status counts.
-         */
         function applyAllFilters() {
             let currentProcessedOrders = [...allOrders];
-
             const now = new Date();
             const todayUtcStart = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
-            const thisWeekUtcStart = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate() - (now.getUTCDay() === 0 ? 6 : now.getUTCDay() - 1))); // Monday start
+            const thisWeekUtcStart = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate() - (now.getUTCDay() === 0 ? 6 : now.getUTCDay() - 1)));
             const thisMonthUtcStart = new Date(Date.UTC(now.getFullYear(), now.getMonth(), 1));
-
             currentProcessedOrders = currentProcessedOrders.filter(order => {
                 let createdAt;
                 try {
@@ -1053,63 +962,46 @@
                     if (createdAtString && createdAtString.length > 0) {
                         createdAt = new Date(createdAtString);
                     } else {
-                        createdAt = new Date(0); // Epoch start if invalid
-                        console.warn(`Warning: createdAt is null or empty for order: ${order._id || 'unknown_id'}. Treating as epoch 0.`);
+                        createdAt = new Date(0);
                     }
                 } catch (e) {
-                    createdAt = new Date(0); // Epoch start on parse error
-                    console.error(`Error parsing createdAt date: ${e} for order: ${order._id || 'unknown_id'}. Treating as epoch 0.`);
+                    createdAt = new Date(0);
                 }
-
                 let matchesDateRange = true;
                 if (currentDateFilter === 'today') {
-                    matchesDateRange = createdAt.getTime() >= todayUtcStart.getTime() &&
-                                       createdAt.getTime() < todayUtcStart.getTime() + (24 * 60 * 60 * 1000);
+                    matchesDateRange = createdAt.getTime() >= todayUtcStart.getTime() && createdAt.getTime() < todayUtcStart.getTime() + (24 * 60 * 60 * 1000);
                 } else if (currentDateFilter === 'thisWeek') {
-                    matchesDateRange = createdAt.getTime() >= thisWeekUtcStart.getTime() &&
-                                       createdAt.getTime() < thisWeekUtcStart.getTime() + (7 * 24 * 60 * 60 * 1000);
+                    matchesDateRange = createdAt.getTime() >= thisWeekUtcStart.getTime() && createdAt.getTime() < thisWeekUtcStart.getTime() + (7 * 24 * 60 * 60 * 1000);
                 } else if (currentDateFilter === 'thisMonth') {
                     const nextMonthUtcStart = new Date(Date.UTC(now.getFullYear(), now.getMonth() + 1, 1));
-                    matchesDateRange = createdAt.getTime() >= thisMonthUtcStart.getTime() &&
-                                       createdAt.getTime() < nextMonthUtcStart.getTime();
+                    matchesDateRange = createdAt.getTime() >= thisMonthUtcStart.getTime() && createdAt.getTime() < nextMonthUtcStart.getTime();
                 } else if (currentDateFilter === 'custom') {
                     if (customStartDate && customEndDate) {
                         const customStartUtc = new Date(Date.UTC(customStartDate.getFullYear(), customStartDate.getMonth(), customStartDate.getDate()));
                         const customEndUtc = new Date(Date.UTC(customEndDate.getFullYear(), customEndDate.getMonth(), customEndDate.getDate()));
-                        matchesDateRange = createdAt.getTime() >= customStartUtc.getTime() &&
-                                           createdAt.getTime() < customEndUtc.getTime() + (24 * 60 * 60 * 1000);
+                        matchesDateRange = createdAt.getTime() >= customStartUtc.getTime() && createdAt.getTime() < customEndUtc.getTime() + (24 * 60 * 60 * 1000);
                     } else {
                         matchesDateRange = false;
                     }
                 }
                 return matchesDateRange;
             });
-
             if (currentUserRole === 'confirmation' && currentUserId) {
-                currentProcessedOrders = currentProcessedOrders.filter(order => {
-                    return order.assignedTo && order.assignedTo._id === currentUserId;
-                });
-                console.log(`DEBUG: Applying agent filter for user ID: ${currentUserId}. Current processed count: ${currentProcessedOrders.length}`);
-            } else if (currentUserRole === 'admin') {
-                console.log('DEBUG: Current user is admin, showing all relevant orders.');
+                currentProcessedOrders = currentProcessedOrders.filter(order => order.assignedTo && order.assignedTo._id === currentUserId);
             }
-
-            // Update counts
             document.getElementById('count-all').textContent = currentProcessedOrders.length;
             document.getElementById('count-pending').textContent = currentProcessedOrders.filter(order => order.status === 'pending').length;
             document.getElementById('count-confirmed').textContent = currentProcessedOrders.filter(order => order.status === 'confirmed').length;
             document.getElementById('count-cancelled').textContent = currentProcessedOrders.filter(order => order.status === 'cancelled').length;
             document.getElementById('count-tentative').textContent = currentProcessedOrders.filter(order => order.status === 'tentative').length;
             document.getElementById('count-dispatched').textContent = currentProcessedOrders.filter(order => order.status === 'dispatched').length;
-            document.getElementById('count-delivered').textContent = currentProcessedOrders.filter(order => order.status === 'delivered').length; // New count
-            document.getElementById('count-backs').textContent = currentProcessedOrders.filter(order => order.status === 'backs').length;       // New count
-
+            document.getElementById('count-delivered').textContent = currentProcessedOrders.filter(order => order.status === 'delivered').length;
+            document.getElementById('count-returned').textContent = currentProcessedOrders.filter(order => order.status === 'returned').length;
             if (currentFilter !== 'all') {
                 filteredOrders = currentProcessedOrders.filter(order => order.status === currentFilter);
             } else {
                 filteredOrders = currentProcessedOrders;
             }
-
             const searchTerm = searchInput.value.toLowerCase().trim();
             if (searchTerm.length > 0) {
                 filteredOrders = filteredOrders.filter(order => {
@@ -1119,30 +1011,19 @@
                     return phoneNumber.includes(searchTerm) || fullName.includes(searchTerm) || orderId.includes(searchTerm);
                 });
             }
-
             const productNameTerm = productNameInput.value.toLowerCase().trim();
             if (productNameTerm.length > 0) {
                 filteredOrders = filteredOrders.filter(order => {
-                    // Check if order.products exists and is an array
-                    if (!order.products || !Array.isArray(order.products)) {
-                        return false;
-                    }
-                    // Use .some() to check if at least one product name matches
-                    return order.products.some(product =>
-                        product && product.name && product.name.toLowerCase().includes(productNameTerm)
-                    );
+                    if (!order.products || !Array.isArray(order.products)) return false;
+                    return order.products.some(product => product && product.name && product.name.toLowerCase().includes(productNameTerm));
                 });
             }
-
             renderOrders();
             sendOrderCountToBackend(filteredOrders.length);
         }
 
-        /**
-         * Renders the filtered orders into the DOM.
-         */
         function renderOrders() {
-            ordersList.innerHTML = ''; // Clear existing cards
+            ordersList.innerHTML = '';
             if (filteredOrders.length === 0) {
                 noOrdersMessage.classList.remove('hidden');
             } else {
@@ -1154,9 +1035,10 @@
         }
 
         /**
-         * Creates an HTML element for a single order card.
-         * @param {Object} order The order data.
-         * @returns {HTMLElement} The created order card element.
+         * Creates an HTML card element for a given order.
+         * This version includes a detailed status history in the collapsible section.
+         * @param {object} order - The order object.
+         * @returns {HTMLElement} The created card element.
          */
         function createOrderCard(order) {
             const card = document.createElement('div');
@@ -1167,28 +1049,45 @@
             const statusColorClass = getStatusColorClass(order.status);
             const statusBgClass = getStatusBgColorClass(order.status);
 
-            const assignedToHtml = order.assignedTo && order.assignedTo.name
-                ? `<div class="flex items-center text-sm text-gray-600 mt-1">
-                                            <i class="fa-solid fa-user-check fa-fw mr-2 text-teal-600"></i>
-                                            <span class="font-medium">Assigned To:</span>
-                                            <span class="ml-1">${order.assignedTo.name}</span>
-                                        </div>`
-                : '';
+            // Get the timestamp for the CURRENT status. Fallback to updatedAt for compatibility.
+            const currentStatusTimestamp = order.statusTimestamps ? order.statusTimestamps[order.status] : order.updatedAt;
+            const formattedStatusTime = currentStatusTimestamp ? formatDateTime(currentStatusTimestamp) : '';
 
-            const productsHtml = order.products && Array.isArray(order.products) && order.products.length > 0
-                ? order.products.map(p => `
-                                <div class="flex justify-between items-center py-1">
-                                    <div class="text-gray-700">
-                                        <span>${p.name || 'N/A'}</span>
-                                        <span class="text-gray-500 text-xs ml-2">(x${p.quantity || 'N/A'})</span>
-                                    </div>
-                                    <div class="text-gray-500 text-sm">
-                                        ${p.color && p.color !== 'N/A' ? `<span class="mr-2">Color: ${p.color}</span>` : ''}
-                                        ${p.size && p.size !== 'N/A' ? `<span>Size: ${p.size}</span>` : ''}
-                                    </div>
-                                </div>
-                            `).join('')
-                : '<p class="text-gray-500 text-sm">No products listed.</p>';
+            const assignedToHtml = order.assignedTo && order.assignedTo.name ?
+                `<div class="flex items-center text-sm text-gray-600 mt-1">
+                    <i class="fa-solid fa-user-check fa-fw mr-2 text-teal-600"></i>
+                    <span class="font-medium">Assigned To:</span>
+                    <span class="ml-1">${order.assignedTo.name}</span>
+                </div>` :
+                '';
+
+            const productsHtml = order.products && Array.isArray(order.products) && order.products.length > 0 ?
+                order.products.map(p => `
+                    <div class="flex justify-between items-center py-1">
+                        <div class="text-gray-700">
+                            <span>${p.name || 'N/A'}</span>
+                            <span class="text-gray-500 text-xs ml-2">(x${p.quantity || 'N/A'})</span>
+                        </div>
+                        <div class="text-gray-500 text-sm">
+                            ${p.color && p.color !== 'N/A' ? `<span class="mr-2">Color: ${p.color}</span>` : ''}
+                            ${p.size && p.size !== 'N/A' ? `<span>Size: ${p.size}</span>` : ''}
+                        </div>
+                    </div>
+                `).join('') :
+                '<p class="text-gray-500 text-sm">No products listed.</p>';
+
+            // Generate Status History HTML from the new `statusTimestamps` field
+            const statusHistoryHtml = order.statusTimestamps ?
+                Object.entries(order.statusTimestamps)
+                .sort(([, a], [, b]) => new Date(b) - new Date(a)) // Sort by date descending
+                .map(([status, timestamp]) => `
+                        <div class="flex justify-between items-center py-1">
+                            <span class="capitalize font-medium text-gray-700">${status}</span>
+                            <span class="text-gray-500 text-sm">${formatDateTime(timestamp)}</span>
+                        </div>
+                    `).join('') :
+                '<p class="text-gray-500 text-sm italic">No status history available.</p>';
+
 
             const notesValue = orderNotes[order._id] || order.notes || '';
 
@@ -1197,8 +1096,11 @@
                     <div class="flex-1">
                         <div class="flex items-center gap-3">
                             <p class="font-bold text-lg text-gray-800">${order.fullName || 'N/A'}</p>
-                            <div class="px-3 py-1 ${statusBgClass} ${statusColorClass} rounded-full text-xs font-semibold capitalize">
-                                ${order.status || 'N/A'}
+                            <div class="text-center">
+                                <div class="px-3 py-1 ${statusBgClass} ${statusColorClass} rounded-full text-xs font-semibold capitalize">
+                                    ${order.status || 'N/A'}
+                                </div>
+                                ${formattedStatusTime ? `<p class="text-gray-500 text-xs mt-1">${formattedStatusTime}</p>` : ''}
                             </div>
                         </div>
                         <p class="text-gray-500 text-sm mt-1">
@@ -1223,12 +1125,12 @@
                 </div>
 
                 <div class="collapsible-content hidden pt-4 mt-4 border-t border-gray-200">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
                             <h4 class="font-semibold text-gray-700 mb-2">Shipping Details</h4>
                             <div class="text-gray-600 text-sm space-y-1">
                                 <p><i class="fa-solid fa-location-dot fa-fw mr-2"></i>${order.wilaya || 'N/A'} - ${order.commune || 'N/A'}</p>
-                                <p><i class="fa-solid fa-map-marker-alt fa-fw mr-2"></i>${order.address || 'N/A'}</p> <!-- Display address here -->
+                                <p><i class="fa-solid fa-map-marker-alt fa-fw mr-2"></i>${order.address || 'N/A'}</p>
                                 ${assignedToHtml}
                             </div>
                         </div>
@@ -1241,11 +1143,17 @@
                     </div>
                     
                     <div class="mt-4">
+                        <h4 class="font-semibold text-gray-700 mb-2">Status History</h4>
+                        <div class="text-gray-600 text-sm space-y-1 bg-gray-50 p-3 rounded-lg">
+                            ${statusHistoryHtml}
+                        </div>
+                    </div>
+                    
+                    <div class="mt-4">
                         <label for="notes-${order._id}" class="block text-sm font-medium text-gray-700 mb-1">Agent Notes</label>
                         <textarea id="notes-${order._id}" class="w-full p-2 notes-input h-20" placeholder="Enter notes here...">${notesValue}</textarea>
                     </div>
 
-                    ${currentFilter !== 'dispatched' && currentFilter !== 'delivered' && currentFilter !== 'backs' ? `
                     <div class="flex flex-wrap justify-between items-center mt-4 gap-2">
                         <div class="flex space-x-2">
                             <button data-order-id="${order._id}" class="edit-btn px-3 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors duration-200 text-sm flex items-center">
@@ -1256,7 +1164,7 @@
                             </button>
                         </div>
                         <div class="flex space-x-2 flex-wrap justify-end gap-2">
-                            ${((order.status === 'pending' || order.status === 'tentative') && (currentUserRole === 'admin' || (currentUserId && order.assignedTo?._id === currentUserId && currentUserRole === 'confirmation'))) ? `
+                            ${(order.status === 'pending' || order.status === 'tentative') && (currentUserRole === 'admin' || (currentUserId && order.assignedTo?._id === currentUserId && currentUserRole === 'confirmation')) ? `
                             <button data-order-id="${order._id}" data-status="confirmed" class="status-update-btn px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors duration-200 text-sm">Confirm</button>
                             ` : ''}
                             ${(order.status !== 'cancelled' && (currentUserRole === 'admin' || (currentUserId && order.assignedTo?._id === currentUserId && currentUserRole === 'confirmation'))) ? `
@@ -1268,18 +1176,15 @@
                             ${(order.status === 'confirmed' && (currentUserRole === 'admin' || (currentUserId && order.assignedTo?._id === currentUserId && currentUserRole === 'confirmation'))) ? `
                             <button data-order-id="${order._id}" class="dispatch-btn px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200 text-sm">Dispatch</button>
                             ` : ''}
-                            <!-- New Status Update Buttons -->
                             ${(order.status === 'dispatched' && (currentUserRole === 'admin' || (currentUserId && order.assignedTo?._id === currentUserId && currentUserRole === 'confirmation'))) ? `
                             <button data-order-id="${order._id}" data-status="delivered" class="status-update-btn px-3 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors duration-200 text-sm">Delivered</button>
-                            <button data-order-id="${order._id}" data-status="backs" class="status-update-btn px-3 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors duration-200 text-sm">Backs</button>
+                            <button data-order-id="${order._id}" data-status="returned" class="status-update-btn px-3 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors duration-200 text-sm">Returned</button>
                             ` : ''}
                         </div>
                     </div>
-                    ` : ''}
                 </div>
             `;
 
-            // Add event listeners
             card.querySelector('.expand-toggle-btn').addEventListener('click', (e) => {
                 const content = card.querySelector('.collapsible-content');
                 const icon = e.currentTarget.querySelector('i');
@@ -1309,42 +1214,26 @@
             return card;
         }
 
-        /**
-         * Updates the status of a specific order on the backend.
-         * @param {string} orderId
-         * @param {string} status
-         * @param {string | null} assignedToId
-         */
-        async function updateStatus(orderId, status, assignedToId = null) {
-            console.log(`DEBUG: updateStatus called for Order ID: ${orderId}, new Status: ${status}`);
-            const currentNotes = orderNotes[orderId] || '';
-            const requestBody = {
-                status: status,
-                notes: currentNotes
-            };
 
+        async function updateStatus(orderId, status, assignedToId = null) {
+            const currentNotes = orderNotes[orderId] || '';
+            const requestBody = { status, notes: currentNotes };
             if (assignedToId !== null) {
                 requestBody.assignedTo = assignedToId;
             } else if (['pending', 'tentative', 'cancelled'].includes(status)) {
-                requestBody.assignedTo = null; // Unassign if status is reset
+                requestBody.assignedTo = null;
             }
-
             const token = getTokenFromPrefs();
             if (!token) {
                 showMessage('Authentication token not found. Please log in.', true);
                 return;
             }
-
             try {
                 const response = await fetch(`https://sheeka.onrender.com/orders/${orderId}/status`, {
                     method: 'PATCH',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                    },
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
                     body: JSON.stringify(requestBody)
                 });
-
                 if (!response.ok) {
                     if (response.status === 401) {
                         handleUnauthorizedAccess();
@@ -1353,12 +1242,10 @@
                     const errorBody = await response.json();
                     throw new Error(errorBody.message || `Failed to update status: ${response.status}`);
                 }
-
                 const backendUpdatedOrder = (await response.json()).order;
-                console.log(`DEBUG: Backend updated order after status change: ${backendUpdatedOrder.status}`);
                 updateLocalOrderAndFilter(backendUpdatedOrder);
                 showMessage(`Order status updated to ${status}`, false);
-                delete orderNotes[orderId]; // Clear local note after successful update
+                delete orderNotes[orderId];
                 saveOrderNotes();
             } catch (e) {
                 showMessage(`Error updating status: ${e.message}`, true);
@@ -1366,23 +1253,14 @@
             }
         }
 
-        /**
-         * Handles editing an order's details, including assigning an agent.
-         * @param {Object} order The order data to edit.
-         */
         async function editOrder(order) {
             editOrderId.value = order._id;
             editFullName.value = order.fullName || '';
             editPhoneNumber.value = order.phoneNumber || '';
             editWilaya.value = order.wilaya || '';
             editCommune.value = order.commune || '';
-            editAddress.value = order.address || ''; // Populate the new address field
+            editAddress.value = order.address || '';
             editNotes.value = orderNotes[order._id] || order.notes || '';
-
-            // Log the address value when opening the modal
-            console.log(`DEBUG: Edit Order Modal opened for Order ID: ${order._id}, current address: "${order.address}"`);
-
-            // Populate assigned agents dropdown
             editAssignedTo.innerHTML = '<option value="">None</option>';
             availableAgents.forEach(agent => {
                 const option = document.createElement('option');
@@ -1390,45 +1268,34 @@
                 option.textContent = agent.name;
                 editAssignedTo.appendChild(option);
             });
-            editAssignedTo.value = order.assignedTo?._id || ''; // Set current assigned agent
-
+            editAssignedTo.value = order.assignedTo?._id || '';
             showModal(editOrderModal);
         }
 
         editOrderForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             hideModal(editOrderModal);
-
             const orderId = editOrderId.value;
             const updatedData = {
                 fullName: editFullName.value,
                 phoneNumber: editPhoneNumber.value,
                 wilaya: editWilaya.value,
                 commune: editCommune.value,
-                address: editAddress.value, // Include the new address field in updatedData
+                address: editAddress.value,
                 notes: editNotes.value,
-                assignedTo: editAssignedTo.value || null, // Send null if 'None' is selected
+                assignedTo: editAssignedTo.value || null,
             };
-
-            // Log the address value being sent on save
-            console.log(`DEBUG: Saving Order ID: ${orderId}, updated address being sent: "${updatedData.address}"`);
-
             const token = getTokenFromPrefs();
             if (!token) {
                 showMessage('Authentication token not found. Please log in.', true);
                 return;
             }
-
             try {
                 const response = await fetch(`https://sheeka.onrender.com/orders/${orderId}`, {
                     method: 'PATCH',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                    },
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
                     body: JSON.stringify(updatedData)
                 });
-
                 if (!response.ok) {
                     if (response.status === 401) {
                         handleUnauthorizedAccess();
@@ -1437,7 +1304,6 @@
                     const errorBody = await response.json();
                     throw new Error(errorBody.message || `Failed to update order: ${response.status}`);
                 }
-
                 const backendUpdatedOrder = (await response.json()).order;
                 updateLocalOrderAndFilter(backendUpdatedOrder);
                 showMessage('Order details updated successfully!', false);
@@ -1449,13 +1315,8 @@
 
         cancelEditOrder.addEventListener('click', () => hideModal(editOrderModal));
 
-        /**
-         * Handles deleting an order after user confirmation.
-         * @param {string} orderId
-         */
         async function deleteOrder(orderId) {
             showModal(confirmDeleteModal);
-
             confirmDelete.onclick = async () => {
                 hideModal(confirmDeleteModal);
                 const token = getTokenFromPrefs();
@@ -1466,11 +1327,8 @@
                 try {
                     const response = await fetch(`https://sheeka.onrender.com/orders/${orderId}`, {
                         method: 'DELETE',
-                        headers: {
-                            'Authorization': `Bearer ${token}`
-                        }
+                        headers: { 'Authorization': `Bearer ${token}` }
                     });
-
                     if (!response.ok) {
                         if (response.status === 401) {
                             handleUnauthorizedAccess();
@@ -1479,12 +1337,10 @@
                         const errorBody = await response.json();
                         throw new Error(errorBody.message || `Failed to delete order: ${response.status}`);
                     }
-
-                    // Remove order from local lists
                     allOrders = allOrders.filter(order => order._id !== orderId);
                     delete orderNotes[orderId];
                     saveOrderNotes();
-                    applyAllFilters(); // Re-render
+                    applyAllFilters();
                     showMessage('Order deleted successfully!', false);
                 } catch (e) {
                     showMessage(`Error deleting order: ${e.message}`, true);
@@ -1494,223 +1350,195 @@
             cancelDelete.onclick = () => hideModal(confirmDeleteModal);
         }
 
-        /**
-         * Dispatches a confirmed order to Yalitec API to create a parcel.
-         * @param {Object} order The order to dispatch.
-         */
         async function dispatchOrder(order) {
-            console.log(`DEBUG: Starting dispatch process for order ${order._id}, address received: "${order.address}"`);
-
-            // 1. Check Yalitec API credentials
-            if (!areYalitecApiCredentialsLoaded) {
-                console.warn('DEBUG: Yalitec API credentials not loaded. Prompting user.');
-                const credentialsEntered = await promptForYalitecCredentials();
-                if (!credentialsEntered) {
-                    showMessage("Dispatch cancelled: Yalitec credentials not provided.", true);
-                    return false;
-                }
-                console.log('DEBUG: Yalitec API credentials successfully provided.');
-            }
-
-            // 2. Check order status
+            // 1. Validate order status and fields
             if (order.status !== 'confirmed') {
                 showMessage("Order must be 'confirmed' before dispatching.", true);
-                console.warn(`DEBUG: Dispatch aborted. Order status is '${order.status}', but must be 'confirmed'.`);
-                return false;
+                return;
             }
-
-            // 3. Validate required fields
             const missingFields = [];
-            const requiredFields = {
-                '_id': 'Order ID',
-                'fullName': 'Customer Name',
-                'phoneNumber': 'Phone Number',
-                'address': 'Address', // Address is now a required field for dispatch
-                'wilaya': 'Wilaya',
-                'commune': 'Commune',
-                'products': 'Products'
-            };
-
+            const requiredFields = { '_id': 'Order ID', 'fullName': 'Customer Name', 'phoneNumber': 'Phone Number', 'address': 'Address', 'wilaya': 'Wilaya', 'commune': 'Commune', 'products': 'Products' };
             Object.keys(requiredFields).forEach(field => {
-                if (!order[field] || 
-                    (typeof order[field] === 'string' && order[field].trim() === '') ||
-                    (Array.isArray(order[field]) && order[field].length === 0)) {
+                if (!order[field] || (typeof order[field] === 'string' && order[field].trim() === '') || (Array.isArray(order[field]) && order[field].length === 0)) {
                     missingFields.push(requiredFields[field]);
                 }
             });
-
             if (missingFields.length > 0) {
                 showMessage(`❗ Missing data for dispatch: ${missingFields.join(', ')}. Please edit the order.`, true);
-                console.error(`DEBUG: Dispatch aborted. Missing required fields: ${missingFields.join(', ')}`);
-                return false;
+                return;
             }
-
-            // 4. Validate phone number format
             const phoneRegex = /^0\d{9}$/;
             if (!phoneRegex.test(order.phoneNumber)) {
                 showMessage("❗ Phone number must start with 0 and be 10 digits long (e.g., 0551234567).", true);
-                console.error(`DEBUG: Dispatch aborted. Invalid phone number format: ${order.phoneNumber}`);
+                return;
+            }
+
+            // 2. Route to the correct provider's dispatch function
+            let success = false;
+            switch (currentDeliveryProvider) {
+                case 'yalidine':
+                    success = await sendToYalidine(order);
+                    break;
+                case 'yalitec':
+                    success = await sendToYalitec(order);
+                    break;
+                case 'maystro':
+                    showMessage(`Dispatch for Maystro is not yet implemented.`, true);
+                    return;
+                case 'zrexpress':
+                    showMessage(`Dispatch for ZR Express is not yet implemented.`, true);
+                    return;
+                default:
+                    showMessage("No delivery provider selected or provider is not supported.", true);
+                    return;
+            }
+
+            // 3. Update status if dispatch was successful
+            if (success) {
+                await updateStatus(order._id, 'dispatched');
+            }
+        }
+
+        function getCommonParcelData(order) {
+            const nameParts = order.fullName.split(' ');
+            const firstName = nameParts[0] || '';
+            const familyName = nameParts.slice(1).join(' ') || 'N/A';
+            const productList = order.products.map(p => `${p.name || 'Unknown'} x${p.quantity || 1}`).join(', ');
+            const price = Math.floor(parseFloat(order.totalPrice) || 0);
+
+            return {
+                order_id: order._id,
+                from_wilaya_name: shopOriginWilayaName,
+                firstname: firstName,
+                familyname: familyName,
+                contact_phone: order.phoneNumber,
+                address: order.address,
+                to_commune_name: order.commune,
+                to_wilaya_name: order.wilaya,
+                product_list: productList,
+                price: price,
+                do_insurance: false,
+                declared_value: price,
+                freeshipping: false,
+                is_stopdesk: false,
+                has_exchange: false,
+                height: 10,
+                width: 20,
+                length: 30,
+                weight: 1,
+            };
+        }
+
+        async function sendToYalitec(order) {
+            const apiId = localStorage.getItem('yalitec_api_id');
+            const apiToken = localStorage.getItem('yalitec_api_token');
+
+            if (!apiId || !apiToken) {
+                showMessage('Yali-tec API credentials are not set. Please configure them in settings.', true);
+                openDeliverySettingsModal();
                 return false;
             }
 
-            isLoading = true;
+            const parcelData = [getCommonParcelData(order)];
+            
             loadingIndicator.classList.remove('hidden');
-
             try {
-                // Prepare parcel data for Yalitec
-                const nameParts = order.fullName.split(' ');
-                const firstName = nameParts[0] || '';
-                const familyName = nameParts.slice(1).join(' ') || 'N/A';
-
-                const productList = order.products.map(p => {
-                    const details = `${p.name || 'Unknown Product'} x${p.quantity || 1}`;
-                    const color = p.color && p.color !== 'N/A' ? ` (Color: ${p.color})` : '';
-                    const size = p.size && p.size !== 'N/A' ? ` (Size: ${p.size})` : '';
-                    return details + color + size;
-                }).join(', ');
-
-                const price = Math.floor(parseFloat(order.totalPrice) || 0);
-
-                const parcelData = {
-                    order_id: order._id,
-                    from_wilaya_name: shopOriginWilayaName,
-                    firstname: firstName,
-                    familyname: familyName,
-                    contact_phone: order.phoneNumber,
-                    address: order.address,
-                    to_commune_name: order.commune,
-                    to_wilaya_name: order.wilaya,
-                    product_list: productList,
-                    price: price,
-                    do_insurance: false,
-                    declared_value: price,
-                    height: 10,
-                    width: 20,
-                    length: 30,
-                    weight: 1,
-                    freeshipping: (order.deliveryFee === 0),
-                    is_stopdesk: false,
-                    has_exchange: false
-                };
-
-                console.log('DEBUG: Prepared parcel data for Yalitec API:', JSON.stringify([parcelData], null, 2));
-
-                // Send request to Yalitec
-                const yalitecUrl = 'https://api.yalitec.me/v1/parcels/';
-                console.log(`DEBUG: Sending POST request to Yalitec: ${yalitecUrl}`);
-
-                // *** FIX START: Add mode: 'no-cors' to bypass CORS preflight check ***
-                const response = await fetch(yalitecUrl, {
+                await fetch('https://api.yalitec.me/v1/parcels/', {
                     method: 'POST',
-                    mode: 'no-cors', // This will send an opaque request
+                    mode: 'no-cors',
                     headers: {
-                        'X-API-ID': yalitecApiId,
-                        'X-API-TOKEN': yalitecApiToken,
+                        'X-API-ID': apiId,
+                        'X-API-TOKEN': apiToken,
                         'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify([parcelData])
+                    body: JSON.stringify(parcelData)
                 });
-                // *** FIX END ***
-
-                // With 'no-cors', we cannot read the response. We assume it was sent successfully.
-                console.log('DEBUG: "no-cors" request sent to Yalitec. Cannot read response. Assuming success.');
                 
-                await updateStatus(order._id, 'dispatched', order.assignedTo?._id);
-
-                showMessage(`✅ Parcel dispatch request sent! Please verify in your Yalitec dashboard.`, false);
-                
+                showMessage(`✅ Request sent to Yalitec for order ${order._id}. Please verify creation in your Yalitec dashboard.`, false);
                 return true;
 
             } catch (error) {
-                console.error('DEBUG: Dispatch Error:', error);
-                
-                let userErrorMessage = "An unexpected error occurred during dispatch.";
-                if (error instanceof TypeError && error.message.includes('Failed to fetch')) {
-                     userErrorMessage = 'Network error. Could not connect to the Yalitec server. Please check your internet connection.';
-                }
-
-                showMessage(`❌ Parcel dispatch failed: ${userErrorMessage}`, true);
+                showMessage(`❌ Failed to send request. This could be a network issue or invalid API credentials (401 Unauthorized). Please verify your keys in Settings.`, true);
+                console.error('Yali-tec Send Error:', error);
                 return false;
             } finally {
-                isLoading = false;
                 loadingIndicator.classList.add('hidden');
             }
         }
 
-        /**
-         * Helper to update the local order list and re-apply all filters after backend operations.
-         * @param {Object} updatedOrder
-         */
+
+        async function sendToYalidine(order) {
+            const apiId = localStorage.getItem('yalidine_api_id');
+            const apiToken = localStorage.getItem('yalidine_api_token');
+
+            if (!apiId || !apiToken) {
+                showMessage('Yalidine API credentials are not set. Please configure them in settings.', true);
+                openDeliverySettingsModal();
+                return false;
+            }
+
+            const parcelData = [getCommonParcelData(order)];
+            
+            loadingIndicator.classList.remove('hidden');
+            try {
+                await fetch('https://api.yalidine.com/v1/parcels/', {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: {
+                        'X-API-ID': apiId,
+                        'X-API-TOKEN': apiToken,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(parcelData)
+                });
+                
+                showMessage(`✅ Request sent to Yalidine for order ${order._id}. Please verify creation in your Yalidine dashboard.`, false);
+                return true;
+
+            } catch (error) {
+                showMessage(`❌ Failed to send request. This could be a network issue or invalid API credentials (401 Unauthorized). Please verify your keys in Settings.`, true);
+                console.error('Yalidine Send Error:', error);
+                return false;
+            } finally {
+                loadingIndicator.classList.add('hidden');
+            }
+        }
+
         function updateLocalOrderAndFilter(updatedOrder) {
-            console.log(`DEBUG: updateLocalOrderAndFilter called for order ${updatedOrder._id} with status ${updatedOrder.status}`);
             const index = allOrders.findIndex(order => order._id === updatedOrder._id);
             if (index !== -1) {
                 allOrders[index] = updatedOrder;
-                // Re-sort the entire list to maintain newest-first order
                 allOrders.sort((a, b) => {
                     const dateA = new Date(a.createdAt || '1970-01-01T00:00:00Z').getTime();
                     const dateB = new Date(b.createdAt || '1970-01-01T00:00:00Z').getTime();
-                    return dateB - dateA; // Sort descending (newest first)
+                    return dateB - dateA;
                 });
-                console.log(`DEBUG: Local allOrders updated for ${updatedOrder._id} to status ${updatedOrder.status}`);
                 applyAllFilters();
             } else {
-                console.log(`DEBUG: Order ${updatedOrder._id} not found in local allOrders. Refetching all orders.`);
                 fetchOrders();
             }
         }
 
-        /**
-         * Sends the current filtered order count to the backend.
-         * @param {number} count
-         */
         async function sendOrderCountToBackend(count) {
             const token = getTokenFromPrefs();
-            if (!token) {
-                console.warn('Warning: No authentication token found. Not sending order count to backend.');
-                return;
-            }
-
+            if (!token || !currentUserId) return; // FIX: Added check for currentUserId
             try {
-                const response = await fetch('https://sheeka.onrender.com/countorder/order-counts', {
+                await fetch('https://sheeka.onrender.com/countorder/order-counts', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`,
-                    },
-                    body: JSON.stringify({
-                        count: count,
-                        timestamp: new Date().toISOString(),
-                        userId: currentUserId,
-                        dateFilter: currentDateFilter,
-                        statusFilter: currentFilter,
-                    }),
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                    body: JSON.stringify({ count, timestamp: new Date().toISOString(), userId: currentUserId, dateFilter: currentDateFilter, statusFilter: currentFilter }),
                 });
-
-                if (response.status === 201) {
-                    console.log(`Successfully sent filtered order count to backend: ${count}`);
-                } else {
-                    console.warn(`Failed to send order count. Status: ${response.status}, Body: ${await response.text()}`);
-                }
             } catch (e) {
                 console.error('Error sending order count to backend:', e);
             }
         }
 
-        /**
-         * Fetches users with the 'confirmation' role (agents) from the backend.
-         */
         async function fetchAdmins() {
             try {
                 const response = await fetch('https://sheeka.onrender.com/auth/users');
                 if (response.status === 200) {
                     const fetchedUsers = await response.json();
-                    availableAgents = fetchedUsers
-                        .filter(user => user.role === 'confirmation')
-                        .map(user => ({
-                            id: user._id.toString(),
-                            name: user.name.toString(),
-                        }));
+                    availableAgents = fetchedUsers.filter(user => user.role === 'confirmation').map(user => ({ id: user._id.toString(), name: user.name.toString() }));
                 } else if (response.status === 401) {
                     handleUnauthorizedAccess();
                 } else {
@@ -1721,16 +1549,10 @@
             }
         }
 
-        /**
-         * Starts a periodic timer to poll for new orders from the backend.
-         */
         function startPollingForNewOrders() {
-            pollingTimer = setInterval(pollAndNotifyForNewOrders, 30000); // Every 30 seconds
+            pollingTimer = setInterval(pollAndNotifyForNewOrders, 30000);
         }
 
-        /**
-         * Polls the backend for new orders and notifies the user if any are found.
-         */
         async function pollAndNotifyForNewOrders() {
             try {
                 const response = await fetch('https://sheeka.onrender.com/orders');
@@ -1742,33 +1564,22 @@
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
                 const currentOrders = await response.json();
-
                 currentOrders.sort((a, b) => {
                     const dateA = new Date(a.createdAt || '1970-01-01T00:00:00Z').getTime();
                     const dateB = new Date(b.createdAt || '1970-01-01T00:00:00Z').getTime();
                     return dateB - dateA;
                 });
-
                 const currentOrderIds = new Set(currentOrders.map(order => order._id.toString()));
                 const newOrderIds = [...currentOrderIds].filter(id => !lastFetchedOrderIds.has(id));
-
                 if (newOrderIds.length > 0) {
-                    console.log(`DEBUG: New orders detected! Count: ${newOrderIds.length}`);
                     showMessage('🔔 New order received! Refreshing data...', false);
                     allOrders = currentOrders;
                     applyAllFilters();
-
                     for (const order of currentOrders) {
                         if (newOrderIds.has(order._id.toString())) {
-                            const customerName = order.fullName || 'N/A';
-                            const orderId = order._id || 'N/A';
-                            const totalPrice = order.totalPrice || '0.00';
-                            console.log(`Desktop Notification: New Order Arrived! Order #${orderId} from ${customerName} (Total: DZD${totalPrice})`);
-                            sendEmailWithEmailJS(order); // Send email via EmailJS
+                            sendEmailWithEmailJS(order);
                         }
                     }
-                } else {
-                    console.log('DEBUG: No new orders detected.');
                 }
                 lastFetchedOrderIds = currentOrderIds;
             } catch (e) {
@@ -1776,14 +1587,9 @@
             }
         }
         
-        /**
-         * Sends an email notification for a new order using EmailJS.
-         * @param {Object} order The order data.
-         */
         function sendEmailWithEmailJS(order) {
-            const serviceID = 'service_va30odk'; // Replace with your EmailJS Service ID
-            const templateID = 'template_49nz2wu'; // Replace with your EmailJS Template ID
-
+            const serviceID = 'service_va30odk';
+            const templateID = 'template_49nz2wu';
             let productsSummary = '';
             if (order.products && Array.isArray(order.products) && order.products.length > 0) {
                 productsSummary = order.products.map(p => {
@@ -1800,7 +1606,6 @@
             } else {
                 productsSummary = 'No products listed.';
             }
-
             const templateParams = {
                 to_email: 'sheekaoff@gmail.com',
                 order_id: order._id || 'N/A',
@@ -1812,7 +1617,6 @@
                 notes: order.notes || 'No notes.',
                 created_at: formatDateTime(order.createdAt || new Date().toISOString())
             };
-
             emailjs.send(serviceID, templateID, templateParams)
                 .then(function(response) {
                    console.log('SUCCESS! Email sent for new order.', response.status, response.text);
@@ -1823,13 +1627,8 @@
                 });
         }
 
-
         // --- Report Generation ---
 
-        /**
-         * Generates and displays the order summary report.
-         * Includes new 'delivered' and 'backs' statuses.
-         */
         function generateAndShowReport() {
             const totalOrders = filteredOrders.length;
             const pendingOrders = filteredOrders.filter(o => o.status === 'pending').length;
@@ -1837,18 +1636,16 @@
             const tentativeOrders = filteredOrders.filter(o => o.status === 'tentative').length;
             const cancelledOrders = filteredOrders.filter(o => o.status === 'cancelled').length;
             const dispatchedOrders = filteredOrders.filter(o => o.status === 'dispatched').length;
-            const deliveredOrders = filteredOrders.filter(o => o.status === 'delivered').length; // New
-            const backsOrders = filteredOrders.filter(o => o.status === 'backs').length;       // New
-
+            const deliveredOrders = filteredOrders.filter(o => o.status === 'delivered').length;
+            const returnedOrders = filteredOrders.filter(o => o.status === 'returned').length;
             reportTotal.textContent = totalOrders;
             reportPending.textContent = pendingOrders;
             reportConfirmed.textContent = confirmedOrders;
             reportTentative.textContent = tentativeOrders;
             reportCancelled.textContent = cancelledOrders;
             reportDispatched.textContent = dispatchedOrders;
-            reportDelivered.textContent = deliveredOrders; // Update new element
-            reportBacks.textContent = backsOrders;       // Update new element
-
+            reportDelivered.textContent = deliveredOrders;
+            reportReturned.textContent = returnedOrders;
             let dateRangeText;
             const now = new Date();
             if (currentDateFilter === 'allTime') {
@@ -1865,111 +1662,66 @@
                 dateRangeText = 'Unknown Date Range';
             }
             reportDateRange.textContent = dateRangeText;
-
             showModal(orderReportModal);
         }
         closeReportModal.addEventListener('click', () => hideModal(orderReportModal));
 
-        /**
-         * Generates and displays a report of order statistics per assigned agent.
-         * Includes new 'delivered' and 'backs' statuses.
-         */
         function generateAgentStatsReport() {
             const agentStats = {};
-
-            // Initialize stats for all available agents
             availableAgents.forEach(agent => {
-                agentStats[agent.id] = {
-                    agentName: agent.name,
-                    pending: 0,
-                    confirmed: 0,
-                    cancelled: 0,
-                    tentative: 0,
-                    dispatched: 0,
-                    delivered: 0, // New
-                    backs: 0,       // New
-                    totalAssigned: 0,
-                };
+                agentStats[agent.id] = { agentName: agent.name, pending: 0, confirmed: 0, cancelled: 0, tentative: 0, dispatched: 0, delivered: 0, returned: 0, totalAssigned: 0 };
             });
-
-            // Filter orders by date range before processing for agents
             let ordersForReport = [...allOrders];
             const now = new Date();
             const todayUtcStart = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
-            const thisWeekUtcStart = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate() - (now.getUTCDay() === 0 ? 6 : now.getUTCDay() - 1))); // Monday start
+            const thisWeekUtcStart = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate() - (now.getUTCDay() === 0 ? 6 : now.getUTCDay() - 1)));
             const thisMonthUtcStart = new Date(Date.UTC(now.getFullYear(), now.getMonth(), 1));
-
             ordersForReport = ordersForReport.filter(order => {
                 let createdAt;
                 try {
                     const createdAtString = order.createdAt?.toString();
-                    if (createdAtString && createdAtString.length > 0) {
-                        createdAt = new Date(createdAtString);
-                    } else {
-                        createdAt = new Date(0);
-                    }
+                    createdAt = (createdAtString && createdAtString.length > 0) ? new Date(createdAtString) : new Date(0);
                 } catch (e) {
                     createdAt = new Date(0);
-                    console.error(`Error parsing createdAt date for agent report: ${e} for order: ${order._id || 'unknown_id'}. Treating as epoch 0.`);
                 }
-
                 let matchesDateRange = true;
                 if (currentDateFilter === 'today') {
-                    matchesDateRange = createdAt.getTime() >= todayUtcStart.getTime() &&
-                                       createdAt.getTime() < todayUtcStart.getTime() + (24 * 60 * 60 * 1000);
+                    matchesDateRange = createdAt.getTime() >= todayUtcStart.getTime() && createdAt.getTime() < todayUtcStart.getTime() + (24 * 60 * 60 * 1000);
                 } else if (currentDateFilter === 'thisWeek') {
-                    matchesDateRange = createdAt.getTime() >= thisWeekUtcStart.getTime() &&
-                                       createdAt.getTime() < thisWeekUtcStart.getTime() + (7 * 24 * 60 * 60 * 1000);
+                    matchesDateRange = createdAt.getTime() >= thisWeekUtcStart.getTime() && createdAt.getTime() < thisWeekUtcStart.getTime() + (7 * 24 * 60 * 60 * 1000);
                 } else if (currentDateFilter === 'thisMonth') {
                     const nextMonthUtcStart = new Date(Date.UTC(now.getFullYear(), now.getMonth() + 1, 1));
-                    matchesDateRange = createdAt.getTime() >= thisMonthUtcStart.getTime() &&
-                                       createdAt.getTime() < nextMonthUtcStart.getTime();
+                    matchesDateRange = createdAt.getTime() >= thisMonthUtcStart.getTime() && createdAt.getTime() < nextMonthUtcStart.getTime();
                 } else if (currentDateFilter === 'custom') {
                     if (customStartDate && customEndDate) {
                         const customStartUtc = new Date(Date.UTC(customStartDate.getFullYear(), customStartDate.getMonth(), customStartDate.getDate()));
                         const customEndUtc = new Date(Date.UTC(customEndDate.getFullYear(), customEndDate.getMonth(), customEndDate.getDate()));
-                        matchesDateRange = createdAt.getTime() >= customStartUtc.getTime() &&
-                                           createdAt.getTime() < customEndUtc.getTime() + (24 * 60 * 60 * 1000);
+                        matchesDateRange = createdAt.getTime() >= customStartUtc.getTime() && createdAt.getTime() < customEndUtc.getTime() + (24 * 60 * 60 * 1000);
                     } else {
                         matchesDateRange = false;
                     }
                 }
                 return matchesDateRange;
             });
-
             for (const order of ordersForReport) {
                 if (order.assignedTo && order.assignedTo._id) {
                     const agentId = order.assignedTo._id.toString();
                     const agentName = order.assignedTo.name || 'Unknown Agent';
-
                     if (!agentStats[agentId]) {
-                        agentStats[agentId] = {
-                            agentName: agentName,
-                            pending: 0,
-                            confirmed: 0,
-                            cancelled: 0,
-                            tentative: 0,
-                            dispatched: 0,
-                            delivered: 0, // New
-                            backs: 0,       // New
-                            totalAssigned: 0,
-                        };
+                        agentStats[agentId] = { agentName: agentName, pending: 0, confirmed: 0, cancelled: 0, tentative: 0, dispatched: 0, delivered: 0, returned: 0, totalAssigned: 0 };
                     }
-
                     agentStats[agentId].totalAssigned++;
-
                     switch (order.status) {
                         case 'pending': agentStats[agentId].pending++; break;
                         case 'confirmed': agentStats[agentId].confirmed++; break;
                         case 'cancelled': agentStats[agentId].cancelled++; break;
                         case 'tentative': agentStats[agentId].tentative++; break;
                         case 'dispatched': agentStats[agentId].dispatched++; break;
-                        case 'delivered': agentStats[agentId].delivered++; break; // New
-                        case 'backs': agentStats[agentId].backs++; break;       // New
+                        case 'delivered': agentStats[agentId].delivered++; break;
+                        case 'returned': agentStats[agentId].returned++; break;
                     }
                 }
             }
-
             let dateRangeText;
             if (currentDateFilter === 'allTime') {
                 dateRangeText = 'All Time';
@@ -1985,7 +1737,6 @@
                 dateRangeText = 'Current Filters';
             }
             agentReportDateRange.textContent = dateRangeText;
-
             agentStatsContainer.innerHTML = '';
             const agentEntries = Object.values(agentStats);
             if (agentEntries.length === 0) {
@@ -1998,34 +1749,13 @@
                     agentCard.innerHTML = `
                         <h4 class="text-lg font-bold text-blue-gray-700 mb-2">Agent: ${stats.agentName}</h4>
                         <hr class="my-2">
-                        <div class="flex justify-between items-center py-1">
-                            <span class="text-gray-800">Total Assigned</span>
-                            <span class="font-bold text-blue-600">${stats.totalAssigned}</span>
-                        </div>
-                        <div class="flex justify-between items-center py-1">
-                            <span class="text-gray-800">Confirmed</span>
-                            <span class="font-bold text-green-600">${stats.confirmed}</span>
-                        </div>
-                        <div class="flex justify-between items-center py-1">
-                            <span class="text-gray-800">Pending</span>
-                            <span class="font-bold text-indigo-600">${stats.pending}</span>
-                        </div>
-                        <div class="flex justify-between items-center py-1">
-                            <span class="text-gray-800">Tentative</span>
-                            <span class="font-bold text-orange-600">${stats.tentative}</span>
-                        </div>
-                        <div class="flex justify-between items-center py-1">
-                            <span class="text-gray-800">Dispatched</span>
-                            <span class="font-bold text-blue-600">${stats.dispatched}</span>
-                        </div>
-                        <div class="flex justify-between items-center py-1">
-                            <span class="text-gray-800">Delivered</span>
-                            <span class="font-bold text-teal-600">${stats.delivered}</span>
-                        </div>
-                        <div class="flex justify-between items-center py-1">
-                            <span class="text-gray-800">Returned (Backs)</span>
-                            <span class="font-bold text-purple-600">${stats.backs}</span>
-                        </div>
+                        <div class="flex justify-between items-center py-1"><span class="text-gray-800">Total Assigned</span><span class="font-bold text-blue-600">${stats.totalAssigned}</span></div>
+                        <div class="flex justify-between items-center py-1"><span class="text-gray-800">Confirmed</span><span class="font-bold text-green-600">${stats.confirmed}</span></div>
+                        <div class="flex justify-between items-center py-1"><span class="text-gray-800">Pending</span><span class="font-bold text-indigo-600">${stats.pending}</span></div>
+                        <div class="flex justify-between items-center py-1"><span class="text-gray-800">Tentative</span><span class="font-bold text-orange-600">${stats.tentative}</span></div>
+                        <div class="flex justify-between items-center py-1"><span class="text-gray-800">Dispatched</span><span class="font-bold text-blue-600">${stats.dispatched}</span></div>
+                        <div class="flex justify-between items-center py-1"><span class="text-gray-800">Delivered</span><span class="font-bold text-teal-600">${stats.delivered}</span></div>
+                        <div class="flex justify-between items-center py-1"><span class="text-gray-800">Returned</span><span class="font-bold text-purple-600">${stats.returned}</span></div>
                     `;
                     agentStatsContainer.appendChild(agentCard);
                 });
@@ -2036,45 +1766,36 @@
 
         // --- Initial Load and Event Listeners ---
         document.addEventListener('DOMContentLoaded', () => {
-            // Initialize EmailJS with your Public Key
-            emailjs.init('alok19p0pP9NFJsDL'); // <-- IMPORTANT: REPLACE WITH YOUR PUBLIC KEY
-
-            // Directly check login status without splash screen
+            emailjs.init('alok19p0pP9NFJsDL');
             checkLoginStatus();
             
-            // Login Form Submission
             loginForm.addEventListener('submit', async (e) => {
                 e.preventDefault();
                 loginButton.disabled = true;
                 loginButton.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Loading...';
                 loginMessage.classList.add('hidden');
-
                 const email = document.getElementById('email').value;
                 const password = document.getElementById('password').value;
-
                 try {
                     const response = await fetch('https://sheeka.onrender.com/auth/login', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ email, password })
                     });
-
                     const data = await response.json();
-
                     if (response.ok) {
                         localStorage.setItem('token', data.token);
                         localStorage.setItem('role', data.user.role);
                         localStorage.setItem('id', data.user.id);
-                        localStorage.setItem('index', data.user.index); // Store the index
-
+                        localStorage.setItem('index', data.user.index);
                         if (data.user.index === 1) {
                             document.getElementById('supportMessage').textContent = 'Your system is off. Please contact support.';
                             showScreen('contactSupportPage');
                         } else {
                             showScreen('ordersScreen');
-                            fetchAdmins(); // Fetch admins for assignment dropdown
-                            fetchOrders(); // Fetch orders for the main screen
-                            startPollingForNewOrders(); // Start polling
+                            fetchAdmins();
+                            fetchOrders();
+                            startPollingForNewOrders();
                         }
                     } else {
                         loginMessage.textContent = data.message || 'Login failed';
@@ -2089,29 +1810,16 @@
                 }
             });
 
-            // Filter button event listeners
             document.querySelectorAll('.filter-button').forEach(button => {
                 button.addEventListener('click', (e) => {
                     const filterType = e.target.dataset.filterType;
                     const filterValue = e.target.dataset.filterValue;
-
-                    // Deactivate all buttons of the same type
                     document.querySelectorAll(`.filter-button[data-filter-type="${filterType}"]`).forEach(btn => {
                         btn.classList.remove('active', 'bg-black', 'text-white');
                         btn.classList.add('bg-gray-200', 'text-gray-800');
                     });
-
-                    // Activate clicked button
-                    e.target.classList.add('active');
-                    if (filterType === 'status') {
-                        e.target.classList.remove('bg-gray-200', 'text-gray-800');
-                        e.target.classList.add('bg-black', 'text-white'); // Black for status buttons
-                    } else {
-                        e.target.classList.remove('bg-gray-200', 'text-gray-800');
-                        e.target.classList.add('bg-black', 'text-white'); // Black for date buttons
-                    }
-
-
+                    e.target.classList.add('active', 'bg-black', 'text-white');
+                    e.target.classList.remove('bg-gray-200', 'text-gray-800');
                     if (filterType === 'status') {
                         currentFilter = filterValue;
                     } else {
@@ -2127,46 +1835,35 @@
                 });
             });
 
-            // Custom Date Range Picker
             document.getElementById('customDateRangeBtn').addEventListener('click', async () => {
-                // For a real web app, you'd use a robust date picker library.
-                // Here, we'll use simple prompt for demonstration.
                 const startInput = prompt("Enter start date (YYYY-MM-DD):", customStartDate ? customStartDate.toISOString().split('T')[0] : '');
                 if (startInput) {
-                    const startDateObj = new Date(startInput + 'T00:00:00Z'); // Ensure UTC for consistent parsing
+                    const startDateObj = new Date(startInput + 'T00:00:00Z');
                     if (isNaN(startDateObj.getTime())) {
                         showMessage('Invalid start date format. Please use YYYY-MM-DD.', true);
                         return;
                     }
-
                     const endInput = prompt("Enter end date (YYYY-MM-DD):", customEndDate ? customEndDate.toISOString().split('T')[0] : '');
                     if (endInput) {
-                        const endDateObj = new Date(endInput + 'T00:00:00Z'); // Ensure UTC
+                        const endDateObj = new Date(endInput + 'T00:00:00Z');
                         if (isNaN(endDateObj.getTime())) {
                             showMessage('Invalid end date format. Please use YYYY-MM-DD.', true);
                             return;
                         }
-
                         if (startDateObj.getTime() > endDateObj.getTime()) {
                             showMessage('Start date cannot be after end date.', true);
                             return;
                         }
-
                         customStartDate = startDateObj;
                         customEndDate = endDateObj;
                         currentDateFilter = 'custom';
-
-                        // Update button text
                         document.getElementById('customDateRangeBtn').textContent = `Custom: ${customStartDate.toLocaleDateString()} to ${customEndDate.toLocaleDateString()}`;
                         document.getElementById('clearCustomDateBtn').classList.remove('hidden');
-
-                        // Update active state for date filter buttons
                         document.querySelectorAll(`.filter-button[data-filter-type="date"]`).forEach(btn => {
                             btn.classList.remove('active', 'bg-black', 'text-white');
                             btn.classList.add('bg-gray-200', 'text-gray-800');
                         });
                         document.getElementById('customDateRangeBtn').classList.add('active', 'bg-black', 'text-white');
-
                         applyAllFilters();
                     }
                 }
@@ -2178,14 +1875,11 @@
                 currentDateFilter = 'allTime';
                 document.getElementById('clearCustomDateBtn').classList.add('hidden');
                 document.getElementById('customDateRangeBtn').textContent = 'Custom Range';
-
-                // Reset active state to 'All Time'
                 document.querySelectorAll(`.filter-button[data-filter-type="date"]`).forEach(btn => {
                     btn.classList.remove('active', 'bg-black', 'text-white');
                     btn.classList.add('bg-gray-200', 'text-gray-800');
                 });
                 document.querySelector('.filter-button[data-filter-type="date"][data-filter-value="allTime"]').classList.add('active', 'bg-black', 'text-white');
-
                 applyAllFilters();
             });
 
@@ -2193,24 +1887,43 @@
             productNameInput.addEventListener('input', applyAllFilters);
 
             // AppBar Button Event Listeners
-            yalitecSettingsBtn.addEventListener('click', promptForYalitecCredentials);
-            generatePdfBtn.addEventListener('click', () => showMessage('PDF generation is not supported in this web demo.', true)); // Placeholder
+            deliverySettingsBtn.addEventListener('click', openDeliverySettingsModal);
+            generatePdfBtn.addEventListener('click', () => {
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF();
+                let y = 10;
+                doc.text("Filtered Orders", 10, y);
+                y += 10;
+                filteredOrders.forEach(order => {
+                    doc.text(`Order ID: ${order._id}`, 10, y);
+                    y += 10;
+                    doc.text(`Customer: ${order.fullName}`, 10, y);
+                    y += 10;
+                    doc.text(`Phone: ${order.phoneNumber}`, 10, y);
+                    y += 10;
+                    doc.text(`Status: ${order.status}`, 10, y);
+                    y += 10;
+                    doc.text(`Total: DZD ${order.totalPrice}`, 10, y);
+                    y += 15;
+                });
+                doc.save("orders.pdf");
+            });
             viewReportBtn.addEventListener('click', generateAndShowReport);
             agentReportBtn.addEventListener('click', generateAgentStatsReport);
             importShopifyBtn.addEventListener('click', importFromShopify);
 
+            // Delivery Settings Modal Listeners
+            deliveryCompanySelect.addEventListener('change', (e) => updateApiFields(e.target.value));
+            saveDeliverySettings.addEventListener('click', saveDeliveryCredentials);
+            cancelDeliverySettings.addEventListener('click', () => hideModal(deliverySettingsModal));
+
             // Initial loads
             loadCurrentUserRole();
-            loadYalitecApiCredentials();
+            loadDeliveryCredentials();
             loadShopifyApiCredentials();
             loadOrderNotes();
         });
 
-        /**
-         * Determines which screen to show based on login status or system index.
-         * @param {string} screenId The ID of the screen to show ('loginPage', 'contactSupportPage', 'ordersScreen').
-         * @param {string} message Optional message for login page.
-         */
         function showScreen(screenId, message = '') {
             loginPage.classList.add('hidden');
             contactSupportPage.classList.add('hidden');
@@ -2232,35 +1945,23 @@
             }
         }
 
-        /**
-         * Checks login status from localStorage and navigates to the appropriate screen.
-         */
         async function checkLoginStatus() {
             const token = localStorage.getItem('token');
             const userId = localStorage.getItem('id');
-            const systemIndex = parseInt(localStorage.getItem('index') || '0'); // Default to 0 if not found
-
+            const systemIndex = parseInt(localStorage.getItem('index') || '0');
             if (token && userId) {
-                // In a real app, you'd verify the token with your backend here.
-                // For this demo, we'll assume it's valid if present.
-                // Also, re-fetch the latest index from the server to be sure.
                 try {
                     const response = await fetch(`https://sheeka.onrender.com/auth/ausers/${userId}/index`, {
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Authorization': `Bearer ${token}`
-                        }
+                        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }
                     });
-
-                    let fetchedIndex = systemIndex; // Fallback to local storage
+                    let fetchedIndex = systemIndex;
                     if (response.ok) {
                         const data = await response.json();
                         fetchedIndex = parseInt(data.index || '0');
-                        localStorage.setItem('index', fetchedIndex); // Update local storage
+                        localStorage.setItem('index', fetchedIndex);
                     } else {
                         console.warn(`Failed to fetch latest index from server: ${response.status}. Falling back to local storage.`);
                     }
-
                     if (fetchedIndex === 1) {
                         showScreen('contactSupportPage');
                     } else {
